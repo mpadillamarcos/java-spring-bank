@@ -40,4 +40,18 @@ class AccountServiceTest {
                     .hasValue(account);
         }
     }
+
+    @Nested
+    class ListUserAccounts {
+        @Test
+        void returns_all_user_accounts() {
+            var userId = randomUserId();
+            var account1 = service.openAccount(userId);
+            var account2 = service.openAccount(userId);
+
+            var accounts = service.listUserAccounts(userId);
+
+            assertThat(accounts).containsExactly(account1, account2);
+        }
+    }
 }

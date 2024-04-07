@@ -30,7 +30,7 @@ public class AccountService {
     }
 
     public List<Account> listUserAccounts(UserId userId) {
-        return null;
+        return repository.listUserAccounts(userId);
     }
 
     public Optional<Account> findUserAccount(UserId userId, AccountId id) {
