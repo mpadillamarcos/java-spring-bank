@@ -54,4 +54,18 @@ class AccountServiceTest {
             assertThat(accounts).containsExactly(account1, account2);
         }
     }
+
+    @Nested
+    class findUserAccount {
+
+        @Test
+        void returns_one_user_account() {
+            var userId = randomUserId();
+            var account = service.openAccount(userId);
+
+            var response = service.findUserAccount(userId, account.getId());
+
+            assertThat(response).contains(account);
+        }
+    }
 }

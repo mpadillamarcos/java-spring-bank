@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Optional.empty;
 import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 
 @Service
@@ -34,7 +33,7 @@ public class AccountService {
     }
 
     public Optional<Account> findUserAccount(UserId userId, AccountId id) {
-        return empty();
+        return repository.findUserAccount(userId, id);
     }
 
     public void blockUserAccount(UserId userid, AccountId id) {
