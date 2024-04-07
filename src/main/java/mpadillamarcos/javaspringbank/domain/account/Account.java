@@ -44,4 +44,15 @@ public class Account {
                 .state(BLOCKED)
                 .build();
     }
+
+    public Account reopen() {
+        if (state == OPEN) {
+            return this;
+        }
+        requireState(state, BLOCKED);
+
+        return toBuilder()
+                .state(OPEN)
+                .build();
+    }
 }

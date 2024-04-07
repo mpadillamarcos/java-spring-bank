@@ -11,8 +11,7 @@ import java.util.List;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.CLOSED;
+import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,6 +72,34 @@ class AccountTest {
         var blocked = account.block();
 
         assertThat(blocked).isSameAs(account);
+    }
+
+    @Test
+    void set_state_to_open_when_reopening_a_blocked_account() {
+        var account = dummyAccount().build();
+        var blocked = account.block();
+
+        var reopened = blocked.reopen();
+
+        assertThat(reopened.getState()).isEqualTo(OPEN);
+    }
+
+    @Test
+    void throws_exception_when_reopening_a_closed_account() {
+        var account = dummyAccount().state(CLOSED).build();
+
+        var exception = assertThrows(IllegalStateException.class, account::reopen);
+
+        assertThat(exception).hasMessage("expected state to be one of [BLOCKED] but was CLOSED");
+    }
+
+    @Test
+    void does_nothing_when_reopening_an_open_account() {
+        var account = dummyAccount().state(OPEN).build();
+
+        var open = account.reopen();
+
+        assertThat(open).isSameAs(account);
     }
 
     static List<Arguments> accountsWithMissingData() {

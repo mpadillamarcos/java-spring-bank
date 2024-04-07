@@ -37,19 +37,25 @@ public class AccountService {
         return repository.findUserAccount(userId, accountId);
     }
 
-    public void blockUserAccount(UserId userid, AccountId accountId) {
-        var account = findUserAccount(userid, accountId)
-                .orElseThrow(() -> new NotFoundException("account not found"));
+    public void blockUserAccount(UserId userId, AccountId accountId) {
+        var account = getUserAccount(userId, accountId);
 
         repository.update(account.block());
     }
 
-    public void reopenUserAccount(UserId userid, AccountId accountId) {
+    public void reopenUserAccount(UserId userId, AccountId accountId) {
+        var account = getUserAccount(userId, accountId);
+
+        repository.update(account.reopen());
+    }
+
+    public void closeUserAccount(UserId userId, AccountId accountId) {
 
     }
 
-    public void closeUserAccount(UserId userid, AccountId accountId) {
-
+    private Account getUserAccount(UserId userId, AccountId accountId) {
+        return findUserAccount(userId, accountId)
+                .orElseThrow(() -> new NotFoundException("account not found"));
     }
 
 }

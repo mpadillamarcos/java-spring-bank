@@ -1,11 +1,15 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
+import mpadillamarcos.javaspringbank.domain.user.UserId;
 import mpadillamarcos.javaspringbank.infra.TestClock;
 import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Instant.now;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
@@ -50,8 +54,17 @@ class AccountServiceTest {
         @Test
         void returns_all_user_accounts() {
             var userId = randomUserId();
-            var account1 = service.openAccount(userId);
-            var account2 = service.openAccount(userId);
+            var account1 = dummyAccount()
+                    .createdDate(now())
+                    .userId(userId)
+                    .build();
+            var account2 = dummyAccount()
+                    .createdDate(now().plus(1, DAYS))
+                    .userId(userId)
+                    .build();
+
+            repository.insert(account1);
+            repository.insert(account2);
 
             var accounts = service.listUserAccounts(userId);
 
@@ -91,9 +104,36 @@ class AccountServiceTest {
 
             service.blockUserAccount(userId, account.getId());
 
-            assertThat(repository.findUserAccount(userId, account.getId()))
-                    .get()
-                    .returns(BLOCKED, Account::getState);
+            assertStateIs(userId, account, BLOCKED);
         }
+    }
+
+    @Nested
+    class ReopenUserAccount {
+
+        @Test
+        void throws_not_found_exception_when_account_does_not_exist() {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+
+            assertThrows(NotFoundException.class, () -> service.reopenUserAccount(userId, accountId));
+        }
+
+        @Test
+        void reopens_user_account() {
+            var userId = randomUserId();
+            var account = service.openAccount(userId);
+            service.blockUserAccount(userId, account.getId());
+
+            service.reopenUserAccount(userId, account.getId());
+
+            assertStateIs(userId, account, OPEN);
+        }
+    }
+
+    private void assertStateIs(UserId userId, Account account, AccountState state) {
+        assertThat(repository.findUserAccount(userId, account.getId()))
+                .get()
+                .returns(state, Account::getState);
     }
 }
