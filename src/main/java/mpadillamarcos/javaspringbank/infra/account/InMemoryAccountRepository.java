@@ -39,4 +39,12 @@ public class InMemoryAccountRepository implements AccountRepository {
                 .sorted(comparing(Account::getCreatedDate))
                 .toList();
     }
+
+    @Override
+    public void update(Account account) {
+        if (!accounts.containsKey(account.getId())) {
+            throw new IllegalStateException("account does not exist");
+        }
+        accounts.put(account.getId(), account);
+    }
 }

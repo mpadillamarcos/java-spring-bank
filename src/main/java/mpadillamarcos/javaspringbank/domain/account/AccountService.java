@@ -1,6 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
 import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
@@ -32,19 +33,22 @@ public class AccountService {
         return repository.listUserAccounts(userId);
     }
 
-    public Optional<Account> findUserAccount(UserId userId, AccountId id) {
-        return repository.findUserAccount(userId, id);
+    public Optional<Account> findUserAccount(UserId userId, AccountId accountId) {
+        return repository.findUserAccount(userId, accountId);
     }
 
-    public void blockUserAccount(UserId userid, AccountId id) {
+    public void blockUserAccount(UserId userid, AccountId accountId) {
+        var account = findUserAccount(userid, accountId)
+                .orElseThrow(() -> new NotFoundException("account not found"));
+
+        repository.update(account.block());
+    }
+
+    public void reopenUserAccount(UserId userid, AccountId accountId) {
 
     }
 
-    public void reopenUserAccount(UserId userid, AccountId id) {
-
-    }
-
-    public void closeUserAccount(UserId userid, AccountId id) {
+    public void closeUserAccount(UserId userid, AccountId accountId) {
 
     }
 
