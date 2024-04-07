@@ -1,5 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
+import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
 
@@ -7,12 +9,24 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.util.Optional.empty;
+import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 
 @Service
+@RequiredArgsConstructor
 public class AccountService {
 
+    private final AccountRepository repository;
+    private final Clock clock;
+
     public Account openAccount(UserId userId) {
-        return null;
+        var account = newAccount()
+                .userId(userId)
+                .createdDate(clock.now())
+                .build();
+
+        repository.insert(account);
+
+        return account;
     }
 
     public List<Account> listUserAccounts(UserId userId) {
