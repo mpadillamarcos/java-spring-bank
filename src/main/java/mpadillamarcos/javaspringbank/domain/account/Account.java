@@ -7,7 +7,7 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import java.time.Instant;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPENED;
+import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
 @Builder(toBuilder = true)
@@ -29,6 +29,6 @@ public class Account {
     public static AccountBuilder newAccount() {
         return builder()
                 .id(randomAccountId())
-                .state(OPENED);
+                .state(OPEN);
     }
 }

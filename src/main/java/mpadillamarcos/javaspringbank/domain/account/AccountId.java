@@ -1,26 +1,24 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import mpadillamarcos.javaspringbank.domain.Id;
 
 import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
-import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
-@Value
-public class AccountId {
+@EqualsAndHashCode(callSuper = true)
+public class AccountId extends Id<UUID> {
 
-    UUID id;
-
-    public AccountId(UUID id) {
-        this.id = require("id", id);
+    public AccountId(UUID value) {
+        super(value);
     }
 
     public static AccountId randomAccountId() {
         return accountId(randomUUID());
     }
 
-    public static AccountId accountId(UUID id) {
-        return new AccountId(id);
+    public static AccountId accountId(UUID value) {
+        return new AccountId(value);
     }
 }
