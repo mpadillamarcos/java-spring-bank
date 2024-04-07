@@ -23,15 +23,15 @@ public class AccountService {
         return empty();
     }
 
-    public void blockAccount(AccountId id) {
+    public void blockUserAccount(UserId userid, AccountId id) {
 
     }
 
-    public void reactivate(AccountId id) {
+    public void reopenUserAccount(UserId userid, AccountId id) {
 
     }
 
-    public void closeAccount(AccountId id) {
+    public void closeUserAccount(UserId userid, AccountId id) {
 
     }
 

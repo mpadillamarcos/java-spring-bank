@@ -39,6 +39,11 @@ public class AccountController {
                 .orElseThrow(() -> new NotFoundException("account not found"));
     }
 
+    @PostMapping("/{accountId}/block")
+    public void blockUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
+        service.blockUserAccount(userId(userId), accountId(accountId));
+    }
+
     private AccountDto toDto(Account account) {
         return AccountDto.builder()
                 .id(account.getId().value())

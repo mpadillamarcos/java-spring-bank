@@ -15,6 +15,7 @@ import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -128,4 +129,30 @@ class AccountControllerTest {
         }
     }
 
+    @Nested
+    class BlockUserAccount {
+
+        @Test
+        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb/block"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5/block"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_blocking_user_account() throws Exception {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+
+            mockMvc.perform(post("/users/{userId}/accounts/{accountId}/block", userId.value(), accountId.value()))
+                    .andExpect(status().isOk());
+
+            verify(accountService).blockUserAccount(userId, accountId);
+        }
+    }
 }
