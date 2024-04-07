@@ -17,8 +17,7 @@ import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -180,6 +179,33 @@ class AccountControllerTest {
                     .andExpect(status().isOk());
 
             verify(accountService).reopenUserAccount(userId, accountId);
+        }
+    }
+
+    @Nested
+    class CloseUserAccount {
+
+        @Test
+        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
+            mockMvc.perform(delete("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(delete("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_closing_user_account() throws Exception {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+
+            mockMvc.perform(delete("/users/{userId}/accounts/{accountId}", userId.value(), accountId.value()))
+                    .andExpect(status().isOk());
+
+            verify(accountService).closeUserAccount(userId, accountId);
         }
     }
 }

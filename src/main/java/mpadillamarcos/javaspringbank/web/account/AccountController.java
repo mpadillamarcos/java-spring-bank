@@ -49,6 +49,11 @@ public class AccountController {
         service.reopenUserAccount(userId(userId), accountId(accountId));
     }
 
+    @DeleteMapping("/{accountId}")
+    public void closeUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
+        service.closeUserAccount(userId(userId), accountId(accountId));
+    }
+
     private AccountDto toDto(Account account) {
         return AccountDto.builder()
                 .id(account.getId().value())
