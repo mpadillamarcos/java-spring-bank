@@ -102,6 +102,33 @@ class AccountTest {
         assertThat(open).isSameAs(account);
     }
 
+    @Test
+    void set_state_to_closed_when_closing_an_open_account() {
+        var account = dummyAccount().build();
+
+        var closed = account.close();
+
+        assertThat(closed.getState()).isEqualTo(CLOSED);
+    }
+
+    @Test
+    void throws_exception_when_closing_a_blocked_account() {
+        var account = dummyAccount().state(BLOCKED).build();
+
+        var exception = assertThrows(IllegalStateException.class, account::close);
+
+        assertThat(exception).hasMessage("expected state to be one of [OPEN] but was BLOCKED");
+    }
+
+    @Test
+    void does_nothing_when_closing_a_closed_account() {
+        var account = dummyAccount().state(CLOSED).build();
+
+        var closed = account.close();
+
+        assertThat(closed).isSameAs(account);
+    }
+
     static List<Arguments> accountsWithMissingData() {
         return List.of(
                 Arguments.arguments("id", dummyAccount().id(null)),

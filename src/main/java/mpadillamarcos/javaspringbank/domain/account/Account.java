@@ -7,8 +7,7 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import java.time.Instant;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
+import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 import static mpadillamarcos.javaspringbank.utils.Checks.requireState;
 
@@ -53,6 +52,17 @@ public class Account {
 
         return toBuilder()
                 .state(OPEN)
+                .build();
+    }
+
+    public Account close() {
+        if (state == CLOSED) {
+            return this;
+        }
+        requireState(state, OPEN);
+
+        return toBuilder()
+                .state(CLOSED)
                 .build();
     }
 }

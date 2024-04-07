@@ -50,7 +50,9 @@ public class AccountService {
     }
 
     public void closeUserAccount(UserId userId, AccountId accountId) {
+        var account = getUserAccount(userId, accountId);
 
+        repository.update(account.close());
     }
 
     private Account getUserAccount(UserId userId, AccountId accountId) {

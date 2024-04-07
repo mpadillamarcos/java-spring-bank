@@ -11,8 +11,7 @@ import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
-import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
+import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -128,6 +127,28 @@ class AccountServiceTest {
             service.reopenUserAccount(userId, account.getId());
 
             assertStateIs(userId, account, OPEN);
+        }
+    }
+
+    @Nested
+    class CloseUserAccount {
+
+        @Test
+        void throws_not_found_exception_when_account_does_not_exist() {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+
+            assertThrows(NotFoundException.class, () -> service.closeUserAccount(userId, accountId));
+        }
+
+        @Test
+        void closes_user_account() {
+            var userId = randomUserId();
+            var account = service.openAccount(userId);
+
+            service.closeUserAccount(userId, account.getId());
+
+            assertStateIs(userId, account, CLOSED);
         }
     }
 
