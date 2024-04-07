@@ -155,4 +155,31 @@ class AccountControllerTest {
             verify(accountService).blockUserAccount(userId, accountId);
         }
     }
+
+    @Nested
+    class ReopenUserAccount {
+
+        @Test
+        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb/reopen"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5/reopen"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_reopening_user_account() throws Exception {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+
+            mockMvc.perform(post("/users/{userId}/accounts/{accountId}/reopen", userId.value(), accountId.value()))
+                    .andExpect(status().isOk());
+
+            verify(accountService).reopenUserAccount(userId, accountId);
+        }
+    }
 }

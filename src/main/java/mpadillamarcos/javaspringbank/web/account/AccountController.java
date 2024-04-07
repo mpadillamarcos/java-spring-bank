@@ -44,6 +44,11 @@ public class AccountController {
         service.blockUserAccount(userId(userId), accountId(accountId));
     }
 
+    @PostMapping("/{accountId}/reopen")
+    public void reopenUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
+        service.reopenUserAccount(userId(userId), accountId(accountId));
+    }
+
     private AccountDto toDto(Account account) {
         return AccountDto.builder()
                 .id(account.getId().value())
