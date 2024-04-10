@@ -48,7 +48,7 @@ class AccountTest {
     }
 
     @Test
-    void set_state_to_blocked_when_blocking_an_open_account() {
+    void sets_state_to_blocked_when_blocking_an_open_account() {
         var account = dummyAccount().build();
 
         var blocked = account.block();

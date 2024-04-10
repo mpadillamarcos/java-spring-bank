@@ -10,7 +10,7 @@ import java.util.List;
 import static java.time.Instant.now;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
-import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
 import static mpadillamarcos.javaspringbank.domain.access.AccountAccess.newAccountAccess;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
@@ -49,6 +49,43 @@ class AccountAccessTest {
                 .returns(accessType, AccountAccess::getType)
                 .returns(createdDate, AccountAccess::getCreatedDate)
                 .returns(accessState, AccountAccess::getState);
+    }
+
+    @Test
+    void sets_provided_type_when_granting_access() {
+        var accountAccess = dummyAccountAccess().type(VIEWER).build();
+
+        var operatorAccess = accountAccess.grant(OPERATOR);
+
+        assertThat(operatorAccess.getType()).isEqualTo(OPERATOR);
+
+    }
+
+    @Test
+    void throws_exception_when_changing_access_type_to_an_owner() {
+        var accountAccess = dummyAccountAccess().type(OWNER).build();
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> accountAccess.grant(VIEWER));
+
+        assertThat(exception).hasMessage("Owner access cannot be changed to another access type");
+    }
+
+    @Test
+    void throws_exception_when_changing_access_type_to_owner() {
+        var accountAccess = dummyAccountAccess().type(VIEWER).build();
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> accountAccess.grant(OWNER));
+
+        assertThat(exception).hasMessage("Access type cannot be upgraded to owner");
+    }
+
+    @Test
+    void does_nothing_when_giving_an_access_that_user_already_has() {
+        var accountAccess = dummyAccountAccess().type(OPERATOR).build();
+
+        var operatorAccess = accountAccess.grant(OPERATOR);
+
+        assertThat(operatorAccess).isSameAs(accountAccess);
     }
 
     static List<Arguments> accountAccessWithMissingData() {
