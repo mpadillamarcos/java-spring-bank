@@ -11,7 +11,7 @@ public class AccountAccessService {
 
     }
 
-    public AccountAccess revokeAccess(AccountId accountId, UserId userId) {
-        return null;
+    public void revokeAccess(AccountId accountId, UserId userId) {
+
     }
 }

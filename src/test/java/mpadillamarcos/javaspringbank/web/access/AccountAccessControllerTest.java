@@ -13,6 +13,7 @@ import static mpadillamarcos.javaspringbank.domain.access.AccessType.OPERATOR;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -68,6 +69,35 @@ class AccountAccessControllerTest {
 
             verify(accountAccessService, times(1))
                     .grantAccess(accountAccess.getAccountId(), accountAccess.getUserId(), accountAccess.getType());
+        }
+    }
+
+    @Nested
+    class RevokeAccess {
+
+        @Test
+        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
+            mockMvc.perform(delete("/users/5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/access"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(delete("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/5/access"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_all_required_parameters_are_valid() throws Exception {
+            var accountAccess = dummyAccountAccess().build();
+            var accountId = accountAccess.getAccountId().value();
+            var userId = accountAccess.getUserId().value();
+
+            mockMvc.perform(delete("/users/{userId}/accounts/{accountId}/access", userId, accountId))
+                    .andExpect(status().isOk());
+
+            verify(accountAccessService, times(1))
+                    .revokeAccess(accountAccess.getAccountId(), accountAccess.getUserId());
         }
     }
 

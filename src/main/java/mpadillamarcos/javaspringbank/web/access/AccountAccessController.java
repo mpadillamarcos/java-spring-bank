@@ -24,4 +24,9 @@ public class AccountAccessController {
             @Valid @RequestBody GrantAccountAccessRequest request) {
         service.grantAccess(accountId(accountId), userId(userId), request.getType());
     }
+
+    @DeleteMapping
+    public void revokeAccess(@PathVariable UUID accountId, @PathVariable UUID userId) {
+        service.revokeAccess(accountId(accountId), userId(userId));
+    }
 }

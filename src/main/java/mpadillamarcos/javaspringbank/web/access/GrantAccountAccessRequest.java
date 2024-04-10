@@ -9,4 +9,5 @@ public class GrantAccountAccessRequest {
 
     @NotNull
     private AccessType type;
+
 }
