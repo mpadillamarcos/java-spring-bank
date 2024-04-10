@@ -42,7 +42,9 @@ public class AccountAccess {
             throw new IllegalArgumentException("Access type cannot be upgraded to owner");
         }
         if (this.type == type) {
-            return this;
+            if (this.state == GRANTED) {
+                return this;
+            }
         }
         return toBuilder()
                 .state(GRANTED)

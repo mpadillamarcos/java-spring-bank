@@ -9,6 +9,7 @@ import java.util.List;
 
 import static java.time.Instant.now;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
+import static mpadillamarcos.javaspringbank.domain.access.AccessState.GRANTED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
 import static mpadillamarcos.javaspringbank.domain.access.AccountAccess.newAccountAccess;
@@ -86,6 +87,15 @@ class AccountAccessTest {
         var operatorAccess = accountAccess.grant(OPERATOR);
 
         assertThat(operatorAccess).isSameAs(accountAccess);
+    }
+
+    @Test
+    void changes_state_to_granted_if_it_was_revoked() {
+        var accountAccess = dummyAccountAccess().type(OPERATOR).state(REVOKED).build();
+
+        var grantedAccountAccess = accountAccess.grant(OPERATOR);
+
+        assertThat(grantedAccountAccess.getState()).isEqualTo(GRANTED);
     }
 
     static List<Arguments> accountAccessWithMissingData() {
