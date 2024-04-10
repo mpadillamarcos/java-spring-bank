@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.domain.access;
 
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
+import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,9 @@ public class AccountAccessService {
     }
 
     public void revokeAccess(AccountId accountId, UserId userId) {
+        var accountAccess = repository.findAccountAccess(accountId, userId)
+                .orElseThrow(() -> new NotFoundException("account access not found"));
 
+        repository.update(accountAccess.revoke());
     }
 }

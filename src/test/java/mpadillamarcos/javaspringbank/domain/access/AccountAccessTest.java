@@ -98,6 +98,24 @@ class AccountAccessTest {
         assertThat(grantedAccountAccess.getState()).isEqualTo(GRANTED);
     }
 
+    @Test
+    void does_nothing_when_revoking_access_to_user_with_access_revoked() {
+        var accountAccess = dummyAccountAccess().state(REVOKED).build();
+
+        var revokeAccess = accountAccess.revoke();
+
+        assertThat(revokeAccess).isSameAs(accountAccess);
+    }
+
+    @Test
+    void changes_state_to_revoked() {
+        var accountAccess = dummyAccountAccess().type(VIEWER).build();
+
+        var revokeAccess = accountAccess.revoke();
+
+        assertThat(revokeAccess.getState()).isEqualTo(REVOKED);
+    }
+
     static List<Arguments> accountAccessWithMissingData() {
         return List.of(
                 Arguments.arguments("accountId", dummyAccountAccess().accountId(null)),

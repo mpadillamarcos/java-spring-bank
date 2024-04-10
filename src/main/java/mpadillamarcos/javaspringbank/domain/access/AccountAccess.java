@@ -8,6 +8,7 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import java.time.Instant;
 
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.GRANTED;
+import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
@@ -41,14 +42,21 @@ public class AccountAccess {
         if (type == OWNER) {
             throw new IllegalArgumentException("Access type cannot be upgraded to owner");
         }
-        if (this.type == type) {
-            if (this.state == GRANTED) {
-                return this;
-            }
+        if (this.type == type && this.state == GRANTED) {
+            return this;
         }
         return toBuilder()
                 .state(GRANTED)
                 .type(type)
+                .build();
+    }
+
+    public AccountAccess revoke() {
+        if (this.state == REVOKED) {
+            return this;
+        }
+        return toBuilder()
+                .state(REVOKED)
                 .build();
     }
 }
