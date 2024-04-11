@@ -1,5 +1,6 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
+import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import mpadillamarcos.javaspringbank.infra.TestClock;
@@ -10,17 +11,20 @@ import org.junit.jupiter.api.Test;
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 class AccountServiceTest {
 
     private final AccountRepository repository = new InMemoryAccountRepository();
-    private final AccountService service = new AccountService(repository, new TestClock());
+    private final AccountAccessService accessService = mock(AccountAccessService.class);
+    private final AccountService service = new AccountService(accessService, repository, new TestClock());
 
     @Nested
     class OpenAccount {
@@ -45,6 +49,16 @@ class AccountServiceTest {
 
             assertThat(repository.findUserAccount(userId, account.getId()))
                     .hasValue(account);
+        }
+
+        @Test
+        void grants_owner_access_to_user() {
+            var userId = randomUserId();
+
+            var account = service.openAccount(userId);
+
+            verify(accessService, times(1))
+                    .grantAccess(account.getId(), userId, OWNER);
         }
     }
 

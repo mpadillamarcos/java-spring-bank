@@ -1,6 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
 import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
@@ -9,12 +10,14 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
 
+    private final AccountAccessService accessService;
     private final AccountRepository repository;
     private final Clock clock;
 
@@ -25,6 +28,7 @@ public class AccountService {
                 .build();
 
         repository.insert(account);
+        accessService.grantAccess(account.getId(), userId, OWNER);
 
         return account;
     }
