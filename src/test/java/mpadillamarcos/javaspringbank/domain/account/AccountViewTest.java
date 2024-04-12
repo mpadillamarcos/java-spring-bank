@@ -36,7 +36,7 @@ class AccountViewTest {
                 .returns(access.getUserId(), AccountView::getUserId)
                 .returns(account.getCreatedDate(), AccountView::getCreatedDate)
                 .returns(account.getState(), AccountView::getState)
-                .returns(access.getType(), AccountView::getType);
+                .returns(access.getType(), AccountView::getAccessType);
     }
 
     static List<Arguments> accountViewsWithMissingData() {

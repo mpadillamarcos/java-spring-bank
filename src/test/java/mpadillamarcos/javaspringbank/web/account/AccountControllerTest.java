@@ -1,6 +1,9 @@
 package mpadillamarcos.javaspringbank.web.account;
 
+import mpadillamarcos.javaspringbank.domain.access.AccessType;
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
+import mpadillamarcos.javaspringbank.domain.account.AccountView;
+import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.hamcrest.Matchers.equalTo;
@@ -69,17 +74,20 @@ class AccountControllerTest {
         void returns_list_of_user_accounts() throws Exception {
             var account = dummyAccount().build();
             var userId = account.getUserId().value();
-            var accountId = account.getId().value();
+            var accountId = account.getId();
+            var access = dummyAccountAccess().accountId(accountId).userId(account.getUserId()).type(OWNER).build();
+            var accountView = new AccountView(account, access);
 
-            when(accountService.listUserAccounts(account.getUserId()))
-                    .thenReturn(List.of(account));
+            when(accountService.listUserAccounts(UserId.userId(userId)))
+                    .thenReturn(List.of(accountView));
 
             mockMvc.perform(get("/users/{userId}/accounts", userId))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$[0].id", equalTo(accountId.toString())))
+                    .andExpect(jsonPath("$[0].id", equalTo(accountId.value().toString())))
                     .andExpect(jsonPath("$[0].userId", equalTo(userId.toString())))
                     .andExpect(jsonPath("$[0].createdDate", equalTo(account.getCreatedDate().toString())))
-                    .andExpect(jsonPath("$[0].state", equalTo("OPEN")));
+                    .andExpect(jsonPath("$[0].state", equalTo("OPEN")))
+                    .andExpect(jsonPath("$[0].accessType", equalTo("OWNER")));
         }
     }
 

@@ -6,10 +6,8 @@ import mpadillamarcos.javaspringbank.domain.account.AccountRepository;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 
@@ -46,5 +44,12 @@ public class InMemoryAccountRepository implements AccountRepository {
             throw new IllegalStateException("account does not exist");
         }
         accounts.put(account.getId(), account);
+    }
+
+    @Override
+    public List<Account> getAccounts(Set<AccountId> accountIds) {
+        return accountIds.stream()
+                .map(accounts::get)
+                .toList();
     }
 }

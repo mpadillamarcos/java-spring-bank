@@ -3,7 +3,9 @@ package mpadillamarcos.javaspringbank.domain.account;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface AccountRepository {
 
@@ -14,4 +16,6 @@ public interface AccountRepository {
     List<Account> listUserAccounts(UserId userId);
 
     void update(Account account);
+
+    List<Account> getAccounts(Set<AccountId> accountIds);
 }

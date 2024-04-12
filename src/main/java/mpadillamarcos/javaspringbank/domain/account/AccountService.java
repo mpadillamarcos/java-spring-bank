@@ -1,15 +1,22 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
 import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
+import mpadillamarcos.javaspringbank.domain.access.AccountAccessRepository;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
+import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static java.util.Comparator.comparing;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 
@@ -33,8 +40,16 @@ public class AccountService {
         return account;
     }
 
-    public List<Account> listUserAccounts(UserId userId) {
-        return repository.listUserAccounts(userId);
+    public List<AccountView> listUserAccounts(UserId userId) {
+        var accesses = accessService.listAllAccountAccesses(userId).stream()
+                .collect(toMap(AccountAccess::getAccountId, identity()));
+        var accountIds = accesses.keySet();
+        var accounts = repository.getAccounts(accountIds);
+
+        return accounts.stream()
+                .map(account -> new AccountView(account, accesses.get(account.getId())))
+                .sorted(comparing(AccountView::getCreatedDate))
+                .toList();
     }
 
     public Optional<Account> findUserAccount(UserId userId, AccountId accountId) {
@@ -60,7 +75,7 @@ public class AccountService {
     }
 
     private Account getUserAccount(UserId userId, AccountId accountId) {
-        return findUserAccount(userId, accountId)
+        return repository.findUserAccount(userId, accountId)
                 .orElseThrow(() -> new NotFoundException("account not found"));
     }
 

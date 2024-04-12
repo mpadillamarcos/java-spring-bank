@@ -16,7 +16,7 @@ public class AccountView {
     UserId userId;
     Instant createdDate;
     AccountState state;
-    AccessType type;
+    AccessType accessType;
 
     public AccountView(Account account, AccountAccess access) {
         require("account", account);
@@ -25,6 +25,6 @@ public class AccountView {
         this.userId = access.getUserId();
         this.createdDate = account.getCreatedDate();
         this.state = account.getState();
-        this.type = access.getType();
+        this.accessType = access.getType();
     }
 }

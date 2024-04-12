@@ -1,5 +1,6 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
+import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
@@ -8,10 +9,17 @@ import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
@@ -64,24 +72,40 @@ class AccountServiceTest {
 
     @Nested
     class ListUserAccounts {
+
         @Test
-        void returns_all_user_accounts() {
+        void returns_all_user_account_views() {
             var userId = randomUserId();
             var account1 = dummyAccount()
-                    .createdDate(now())
                     .userId(userId)
+                    .createdDate(now())
                     .build();
             var account2 = dummyAccount()
                     .createdDate(now().plus(1, DAYS))
+                    .build();
+            var access1 = dummyAccountAccess()
+                    .accountId(account1.getId())
                     .userId(userId)
+                    .build();
+            var access2 = dummyAccountAccess()
+                    .accountId(account2.getId())
+                    .userId(userId)
+                    .type(VIEWER)
                     .build();
 
             repository.insert(account1);
             repository.insert(account2);
 
+            when(accessService.listAllAccountAccesses(userId))
+                    .thenReturn(List.of(access1, access2));
+
             var accounts = service.listUserAccounts(userId);
 
-            assertThat(accounts).containsExactly(account1, account2);
+            assertThat(accounts).hasSize(2);
+            assertThat(accounts).containsExactly(
+                    new AccountView(account1, access1),
+                    new AccountView(account2, access2)
+            );
         }
     }
 

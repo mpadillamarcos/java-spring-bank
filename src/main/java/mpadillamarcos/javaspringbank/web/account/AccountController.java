@@ -3,6 +3,7 @@ package mpadillamarcos.javaspringbank.web.account;
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.account.Account;
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
+import mpadillamarcos.javaspringbank.domain.account.AccountView;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +27,7 @@ public class AccountController {
 
     @GetMapping
     public List<AccountDto> listUserAccounts(@PathVariable UUID userId) {
-        return service.listUserAccounts(userId(userId))
-                .stream()
+        return service.listUserAccounts(userId(userId)).stream()
                 .map(this::toDto)
                 .toList();
     }
@@ -52,6 +52,16 @@ public class AccountController {
     @DeleteMapping("/{accountId}")
     public void closeUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
         service.closeUserAccount(userId(userId), accountId(accountId));
+    }
+
+    private AccountDto toDto(AccountView account) {
+        return AccountDto.builder()
+                .id(account.getAccountId().value())
+                .userId(account.getUserId().value())
+                .state(account.getState())
+                .createdDate(account.getCreatedDate())
+                .accessType(account.getAccessType())
+                .build();
     }
 
     private AccountDto toDto(Account account) {
