@@ -13,8 +13,6 @@ public interface AccountRepository {
 
     Optional<Account> findUserAccount(UserId userId, AccountId accountId);
 
-    List<Account> listUserAccounts(UserId userId);
-
     void update(Account account);
 
     List<Account> getAccounts(Set<AccountId> accountIds);

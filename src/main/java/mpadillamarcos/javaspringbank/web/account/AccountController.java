@@ -26,9 +26,9 @@ public class AccountController {
     }
 
     @GetMapping
-    public List<AccountDto> listUserAccounts(@PathVariable UUID userId) {
+    public List<AccountViewDto> listUserAccounts(@PathVariable UUID userId) {
         return service.listUserAccounts(userId(userId)).stream()
-                .map(this::toDto)
+                .map(this::toViewDto)
                 .toList();
     }
 
@@ -54,8 +54,8 @@ public class AccountController {
         service.closeUserAccount(userId(userId), accountId(accountId));
     }
 
-    private AccountDto toDto(AccountView account) {
-        return AccountDto.builder()
+    private AccountViewDto toViewDto(AccountView account) {
+        return AccountViewDto.builder()
                 .id(account.getAccountId().value())
                 .userId(account.getUserId().value())
                 .state(account.getState())

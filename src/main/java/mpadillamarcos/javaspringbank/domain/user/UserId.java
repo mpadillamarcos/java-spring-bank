@@ -16,6 +16,10 @@ public class UserId extends Id<UUID> {
         super(value);
     }
 
+    public UUID getValue() {
+        return value;
+    }
+
     public static UserId randomUserId() {
         return userId(randomUUID());
     }
