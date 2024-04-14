@@ -2,17 +2,14 @@ package mpadillamarcos.javaspringbank.domain.account;
 
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
-import mpadillamarcos.javaspringbank.domain.access.AccountAccessRepository;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
-import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 import static java.util.Comparator.comparing;
 import static java.util.function.Function.identity;
@@ -28,16 +25,17 @@ public class AccountService {
     private final AccountRepository repository;
     private final Clock clock;
 
-    public Account openAccount(UserId userId) {
+    public AccountView openAccount(UserId userId) {
         var account = newAccount()
                 .userId(userId)
                 .createdDate(clock.now())
                 .build();
 
         repository.insert(account);
-        accessService.grantAccess(account.getId(), userId, OWNER);
 
-        return account;
+        var access = accessService.grantAccess(account.getId(), userId, OWNER);
+
+        return new AccountView(account, access);
     }
 
     public List<AccountView> listUserAccounts(UserId userId) {
@@ -52,8 +50,11 @@ public class AccountService {
                 .toList();
     }
 
-    public Optional<Account> findUserAccount(UserId userId, AccountId accountId) {
-        return repository.findUserAccount(userId, accountId);
+    public Optional<AccountView> findUserAccount(UserId userId, AccountId accountId) {
+        var access = accessService.findAccountAccess(accountId, userId).orElseThrow(this::accountNotFound);
+        var account = repository.findById(accountId).orElseThrow(this::accountNotFound);
+
+        return Optional.of(new AccountView(account, access));
     }
 
     public void blockUserAccount(UserId userId, AccountId accountId) {
@@ -76,7 +77,10 @@ public class AccountService {
 
     private Account getUserAccount(UserId userId, AccountId accountId) {
         return repository.findUserAccount(userId, accountId)
-                .orElseThrow(() -> new NotFoundException("account not found"));
+                .orElseThrow(this::accountNotFound);
     }
 
+    private NotFoundException accountNotFound() {
+        return new NotFoundException("account not found");
+    }
 }

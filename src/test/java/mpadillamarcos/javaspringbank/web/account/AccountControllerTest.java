@@ -1,9 +1,7 @@
 package mpadillamarcos.javaspringbank.web.account;
 
-import mpadillamarcos.javaspringbank.domain.access.AccessType;
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
 import mpadillamarcos.javaspringbank.domain.account.AccountView;
-import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +14,10 @@ import java.util.Optional;
 
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
-import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
+import static mpadillamarcos.javaspringbank.domain.user.UserId.userId;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,18 +45,20 @@ class AccountControllerTest {
         @Test
         void returns_opened_account() throws Exception {
             var account = dummyAccount().build();
+            var access = dummyAccountAccess().userId(account.getUserId()).build();
             var userId = account.getUserId().value();
             var accountId = account.getId().value();
 
             when(accountService.openAccount(account.getUserId()))
-                    .thenReturn(account);
+                    .thenReturn(new AccountView(account, access));
 
             mockMvc.perform(post("/users/{userId}/accounts", userId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id", equalTo(accountId.toString())))
                     .andExpect(jsonPath("$.userId", equalTo(userId.toString())))
                     .andExpect(jsonPath("$.createdDate", equalTo(account.getCreatedDate().toString())))
-                    .andExpect(jsonPath("$.state", equalTo("OPEN")));
+                    .andExpect(jsonPath("$.state", equalTo("OPEN")))
+                    .andExpect(jsonPath("$.accessType", equalTo("OWNER")));
         }
     }
 
@@ -78,7 +79,7 @@ class AccountControllerTest {
             var access = dummyAccountAccess().accountId(accountId).userId(account.getUserId()).type(OWNER).build();
             var accountView = new AccountView(account, access);
 
-            when(accountService.listUserAccounts(UserId.userId(userId)))
+            when(accountService.listUserAccounts(userId(userId)))
                     .thenReturn(List.of(accountView));
 
             mockMvc.perform(get("/users/{userId}/accounts", userId))
@@ -109,17 +110,20 @@ class AccountControllerTest {
         @Test
         void returns_user_account_when_it_exists() throws Exception {
             var account = dummyAccount().build();
-            var userId = account.getUserId().value();
-            var accountId = account.getId().value();
+            var userId = account.getUserId();
+            var accountId = account.getId();
+            var access = dummyAccountAccess().accountId(accountId).userId(userId).build();
+            var accountView = new AccountView(account, access);
 
             when(accountService.findUserAccount(account.getUserId(), account.getId()))
-                    .thenReturn(Optional.of(account));
+                    .thenReturn(Optional.of(accountView));
 
-            mockMvc.perform(get("/users/{userId}/accounts/{accountId}", userId, accountId))
+            mockMvc.perform(get("/users/{userId}/accounts/{accountId}", userId.value(), accountId.value()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.id", equalTo(accountId.toString())))
-                    .andExpect(jsonPath("$.userId", equalTo(userId.toString())))
+                    .andExpect(jsonPath("$.id", equalTo(accountId.value().toString())))
+                    .andExpect(jsonPath("$.userId", equalTo(userId.value().toString())))
                     .andExpect(jsonPath("$.createdDate", equalTo(account.getCreatedDate().toString())))
+                    .andExpect(jsonPath("$.accessType", equalTo("OWNER")))
                     .andExpect(jsonPath("$.state", equalTo("OPEN")));
         }
 

@@ -10,9 +10,11 @@ public interface AccountAccessRepository {
 
     void insert(AccountAccess accountAccess);
 
+    Optional<AccountAccess> findGrantedAccountAccess(AccountId accountId, UserId userId);
+
     Optional<AccountAccess> findAccountAccess(AccountId accountId, UserId userId);
 
-    List<AccountAccess> listAllAccountAccesses(UserId userId);
+    List<AccountAccess> listGrantedAccountAccesses(UserId userId);
 
     void update(AccountAccess accountAccess);
 }

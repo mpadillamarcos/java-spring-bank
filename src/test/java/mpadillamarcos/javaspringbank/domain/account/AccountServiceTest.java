@@ -1,6 +1,5 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
-import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
@@ -9,13 +8,11 @@ import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.MINUTES;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
@@ -38,35 +35,46 @@ class AccountServiceTest {
     class OpenAccount {
 
         @Test
-        void returns_a_new_account() {
+        void returns_an_account_view() {
             var userId = randomUserId();
+            var access = dummyAccountAccess().userId(userId).build();
+            when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
 
             var account = service.openAccount(userId);
 
             assertThat(account)
-                    .returns(OPEN, Account::getState)
-                    .returns(userId, Account::getUserId)
-                    .returns(NOW, Account::getCreatedDate);
+                    .returns(OPEN, AccountView::getState)
+                    .returns(userId, AccountView::getUserId)
+                    .returns(NOW, AccountView::getCreatedDate)
+                    .returns(OWNER, AccountView::getAccessType);
         }
 
         @Test
         void persists_new_account() {
             var userId = randomUserId();
+            var access = dummyAccountAccess().userId(userId).build();
+            when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
 
             var account = service.openAccount(userId);
 
-            assertThat(repository.findUserAccount(userId, account.getId()))
-                    .hasValue(account);
+            assertThat(repository.findUserAccount(userId, account.getAccountId()))
+                    .get()
+                    .returns(account.getAccountId(), Account::getId)
+                    .returns(userId, Account::getUserId)
+                    .returns(NOW, Account::getCreatedDate)
+                    .returns(OPEN, Account::getState);
         }
 
         @Test
         void grants_owner_access_to_user() {
             var userId = randomUserId();
+            var access = dummyAccountAccess().userId(userId).build();
+            when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
 
             var account = service.openAccount(userId);
 
             verify(accessService, times(1))
-                    .grantAccess(account.getId(), userId, OWNER);
+                    .grantAccess(account.getAccountId(), userId, OWNER);
         }
     }
 
@@ -76,13 +84,8 @@ class AccountServiceTest {
         @Test
         void returns_all_user_account_views() {
             var userId = randomUserId();
-            var account1 = dummyAccount()
-                    .userId(userId)
-                    .createdDate(now())
-                    .build();
-            var account2 = dummyAccount()
-                    .createdDate(now().plus(1, DAYS))
-                    .build();
+            var account1 = createAccount(dummyAccount().userId(userId).createdDate(now()));
+            var account2 = createAccount(dummyAccount().createdDate(now().plus(1, DAYS)));
             var access1 = dummyAccountAccess()
                     .accountId(account1.getId())
                     .userId(userId)
@@ -92,9 +95,6 @@ class AccountServiceTest {
                     .userId(userId)
                     .type(VIEWER)
                     .build();
-
-            repository.insert(account1);
-            repository.insert(account2);
 
             when(accessService.listAllAccountAccesses(userId))
                     .thenReturn(List.of(access1, access2));
@@ -113,13 +113,39 @@ class AccountServiceTest {
     class FindUserAccount {
 
         @Test
-        void returns_one_user_account() {
+        void returns_one_user_account_view() {
             var userId = randomUserId();
-            var account = service.openAccount(userId);
+            var accountId = randomAccountId();
+            var account = createAccount(dummyAccount().id(accountId).userId(userId));
+            var access = dummyAccountAccess().accountId(accountId).userId(userId).build();
+            var accountView = new AccountView(account, access);
 
-            var response = service.findUserAccount(userId, account.getId());
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
 
-            assertThat(response).contains(account);
+            var response = service.findUserAccount(userId, accountId);
+
+            assertThat(response).isEqualTo(Optional.of(accountView));
+        }
+
+        @Test
+        void returns_account_for_non_owner() {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+            var account = createAccount(dummyAccount().id(accountId));
+            var access = dummyAccountAccess()
+                    .accountId(accountId)
+                    .userId(userId)
+                    .type(VIEWER)
+                    .build();
+            var accountView = new AccountView(account, access);
+
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+
+            var response = service.findUserAccount(userId, accountId);
+
+            assertThat(response).isEqualTo(Optional.of(accountView));
         }
     }
 
@@ -137,11 +163,11 @@ class AccountServiceTest {
         @Test
         void blocks_user_account() {
             var userId = randomUserId();
-            var account = service.openAccount(userId);
+            var account = createAccount(userId);
 
             service.blockUserAccount(userId, account.getId());
 
-            assertStateIs(userId, account, BLOCKED);
+            assertStateIs(userId, account.getId(), BLOCKED);
         }
     }
 
@@ -159,12 +185,12 @@ class AccountServiceTest {
         @Test
         void reopens_user_account() {
             var userId = randomUserId();
-            var account = service.openAccount(userId);
+            var account = createAccount(userId);
             service.blockUserAccount(userId, account.getId());
 
             service.reopenUserAccount(userId, account.getId());
 
-            assertStateIs(userId, account, OPEN);
+            assertStateIs(userId, account.getId(), OPEN);
         }
     }
 
@@ -182,16 +208,28 @@ class AccountServiceTest {
         @Test
         void closes_user_account() {
             var userId = randomUserId();
-            var account = service.openAccount(userId);
+            var account = createAccount(userId);
 
             service.closeUserAccount(userId, account.getId());
 
-            assertStateIs(userId, account, CLOSED);
+            assertStateIs(userId, account.getId(), CLOSED);
         }
     }
 
-    private void assertStateIs(UserId userId, Account account, AccountState state) {
-        assertThat(repository.findUserAccount(userId, account.getId()))
+    private Account createAccount(UserId userId) {
+        return createAccount(dummyAccount().userId(userId));
+    }
+
+    private Account createAccount(Account.AccountBuilder builder) {
+        var account = builder.build();
+
+        repository.insert(account);
+
+        return account;
+    }
+
+    private void assertStateIs(UserId userId, AccountId accountId, AccountState state) {
+        assertThat(repository.findUserAccount(userId, accountId))
                 .get()
                 .returns(state, Account::getState);
     }

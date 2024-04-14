@@ -1,7 +1,6 @@
 package mpadillamarcos.javaspringbank.domain.access;
 
 import lombok.RequiredArgsConstructor;
-import mpadillamarcos.javaspringbank.domain.account.Account;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
@@ -20,29 +19,38 @@ public class AccountAccessService {
     private final AccountAccessRepository repository;
     private final Clock clock;
 
-    public void grantAccess(AccountId accountId, UserId userId, AccessType type) {
-        var accountAccess = repository.findAccountAccess(accountId, userId);
+    public AccountAccess grantAccess(AccountId accountId, UserId userId, AccessType type) {
+        var existingAccess = repository.findGrantedAccountAccess(accountId, userId);
+        AccountAccess access;
 
-        if (accountAccess.isPresent()) {
-            repository.update(accountAccess.get().grant(type));
+        if (existingAccess.isPresent()) {
+            access = existingAccess.get().grant(type);
+            repository.update(access);
         } else {
-            repository.insert(newAccountAccess()
+            access = newAccountAccess()
                     .accountId(accountId)
                     .userId(userId)
                     .createdDate(clock.now())
                     .type(type)
-                    .build());
+                    .build();
+
+            repository.insert(access);
         }
+        return access;
     }
 
     public void revokeAccess(AccountId accountId, UserId userId) {
-        var accountAccess = repository.findAccountAccess(accountId, userId)
+        var accountAccess = repository.findGrantedAccountAccess(accountId, userId)
                 .orElseThrow(() -> new NotFoundException("account access not found"));
 
         repository.update(accountAccess.revoke());
     }
 
     public List<AccountAccess> listAllAccountAccesses(UserId userId) {
-        return repository.listAllAccountAccesses(userId);
+        return repository.listGrantedAccountAccesses(userId);
+    }
+
+    public Optional<AccountAccess> findAccountAccess(AccountId accountId, UserId userId) {
+        return repository.findGrantedAccountAccess(accountId, userId);
     }
 }

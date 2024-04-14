@@ -31,7 +31,7 @@ class AccountAccessServiceTest {
 
             service.grantAccess(accountId, userId, type);
 
-            assertThat(repository.findAccountAccess(accountId, userId))
+            assertThat(repository.findGrantedAccountAccess(accountId, userId))
                     .get()
                     .returns(type, AccountAccess::getType)
                     .returns(GRANTED, AccountAccess::getState)
@@ -46,7 +46,7 @@ class AccountAccessServiceTest {
             service.grantAccess(accountId, userId, VIEWER);
             service.grantAccess(accountId, userId, OPERATOR);
 
-            assertThat(repository.findAccountAccess(accountId, userId))
+            assertThat(repository.findGrantedAccountAccess(accountId, userId))
                     .get()
                     .returns(OPERATOR, AccountAccess::getType);
         }

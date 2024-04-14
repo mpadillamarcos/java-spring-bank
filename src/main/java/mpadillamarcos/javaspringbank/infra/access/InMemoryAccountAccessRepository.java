@@ -2,7 +2,6 @@ package mpadillamarcos.javaspringbank.infra.access;
 
 import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessRepository;
-import mpadillamarcos.javaspringbank.domain.account.Account;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Repository;
@@ -12,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.util.Comparator.comparing;
+import static mpadillamarcos.javaspringbank.domain.access.AccessState.GRANTED;
 
 @Repository
 public class InMemoryAccountAccessRepository implements AccountAccessRepository {
@@ -29,18 +28,23 @@ public class InMemoryAccountAccessRepository implements AccountAccessRepository 
     }
 
     @Override
-    public Optional<AccountAccess> findAccountAccess(AccountId accountId, UserId userId) {
-        var key = new AccountAccessKey(accountId, userId);
-
-        return Optional.ofNullable(accountAccesses.get(key))
-                .filter(accountAccess -> accountAccess.getUserId().equals(userId))
-                .filter(accountAccess -> accountAccess.getAccountId().equals(accountId));
+    public Optional<AccountAccess> findGrantedAccountAccess(AccountId accountId, UserId userId) {
+        return findAccountAccess(accountId, userId)
+                .filter(access -> access.getState().equals(GRANTED));
     }
 
     @Override
-    public List<AccountAccess> listAllAccountAccesses(UserId userId) {
+    public Optional<AccountAccess> findAccountAccess(AccountId accountId, UserId userId) {
+        var key = new AccountAccessKey(accountId, userId);
+
+        return Optional.ofNullable(accountAccesses.get(key));
+    }
+
+    @Override
+    public List<AccountAccess> listGrantedAccountAccesses(UserId userId) {
         return accountAccesses.values().stream()
                 .filter(access -> access.getUserId().equals(userId))
+                .filter(access -> access.getState().equals(GRANTED))
                 .toList();
     }
 
