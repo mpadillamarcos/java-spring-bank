@@ -75,7 +75,7 @@ class AccountTest {
     }
 
     @Test
-    void set_state_to_open_when_reopening_a_blocked_account() {
+    void sets_state_to_open_when_reopening_a_blocked_account() {
         var account = dummyAccount().build();
         var blocked = account.block();
 
@@ -103,7 +103,7 @@ class AccountTest {
     }
 
     @Test
-    void set_state_to_closed_when_closing_an_open_account() {
+    void sets_state_to_closed_when_closing_an_open_account() {
         var account = dummyAccount().build();
 
         var closed = account.close();
