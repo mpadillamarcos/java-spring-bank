@@ -23,7 +23,7 @@ public class BalanceService {
     }
 
     public Balance getBalance(AccountId accountId) {
-        return null;
+        return repository.getBalance(accountId);
     }
 
     public List<Balance> getBalances(Set<AccountId> accountIds) {

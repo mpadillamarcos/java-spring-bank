@@ -23,4 +23,15 @@ class BalanceServiceTest {
                 .returns(accountId, Balance::getAccountId)
                 .returns(Money.zero(EUR), Balance::getAmount);
     }
+
+    @Test
+    void gets_one_balance_by_account_id() {
+        var accountId = randomAccountId();
+
+        service.createBalance(accountId);
+
+        assertThat(service.getBalance(accountId))
+                .returns(accountId, Balance::getAccountId)
+                .returns(Money.zero(EUR), Balance::getAmount);
+    }
 }
