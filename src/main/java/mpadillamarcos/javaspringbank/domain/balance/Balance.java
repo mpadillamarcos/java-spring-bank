@@ -9,7 +9,7 @@ import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
 import static mpadillamarcos.javaspringbank.domain.money.Money.zero;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
-@Builder
+@Builder(toBuilder = true)
 @Value
 public class Balance {
 

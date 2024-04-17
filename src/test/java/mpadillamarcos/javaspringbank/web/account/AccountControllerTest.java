@@ -12,8 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
-import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
-import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
+import static mpadillamarcos.javaspringbank.domain.Instances.*;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
@@ -46,11 +45,12 @@ class AccountControllerTest {
         void returns_opened_account() throws Exception {
             var account = dummyAccount().build();
             var access = dummyAccountAccess().userId(account.getUserId()).build();
+            var balance = dummyBalance().accountId(account.getId()).build();
             var userId = account.getUserId().value();
             var accountId = account.getId().value();
 
             when(accountService.openAccount(account.getUserId()))
-                    .thenReturn(new AccountView(account, access));
+                    .thenReturn(new AccountView(account, access, balance));
 
             mockMvc.perform(post("/users/{userId}/accounts", userId))
                     .andExpect(status().isOk())
@@ -77,7 +77,8 @@ class AccountControllerTest {
             var userId = account.getUserId().value();
             var accountId = account.getId();
             var access = dummyAccountAccess().accountId(accountId).userId(account.getUserId()).type(OWNER).build();
-            var accountView = new AccountView(account, access);
+            var balance = dummyBalance().accountId(accountId).build();
+            var accountView = new AccountView(account, access, balance);
 
             when(accountService.listUserAccounts(userId(userId)))
                     .thenReturn(List.of(accountView));
@@ -113,7 +114,8 @@ class AccountControllerTest {
             var userId = account.getUserId();
             var accountId = account.getId();
             var access = dummyAccountAccess().accountId(accountId).userId(userId).build();
-            var accountView = new AccountView(account, access);
+            var balance = dummyBalance().accountId(accountId).build();
+            var accountView = new AccountView(account, access, balance);
 
             when(accountService.findUserAccount(account.getUserId(), account.getId()))
                     .thenReturn(Optional.of(accountView));

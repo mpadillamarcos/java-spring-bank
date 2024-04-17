@@ -1,6 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.account;
 
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
+import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import mpadillamarcos.javaspringbank.infra.TestClock;
@@ -10,15 +11,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
-import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccount;
-import static mpadillamarcos.javaspringbank.domain.Instances.dummyAccountAccess;
+import static mpadillamarcos.javaspringbank.domain.Instances.*;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.*;
+import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,8 +30,14 @@ import static org.mockito.Mockito.*;
 class AccountServiceTest {
 
     private final AccountRepository repository = new InMemoryAccountRepository();
+    private final BalanceService balanceService = mock(BalanceService.class);
     private final AccountAccessService accessService = mock(AccountAccessService.class);
-    private final AccountService service = new AccountService(accessService, repository, new TestClock());
+    private final AccountService service = new AccountService(
+            balanceService,
+            accessService,
+            repository,
+            new TestClock()
+    );
 
     @Nested
     class OpenAccount {
@@ -38,7 +46,10 @@ class AccountServiceTest {
         void returns_an_account_view() {
             var userId = randomUserId();
             var access = dummyAccountAccess().userId(userId).build();
+            var balance = dummyBalance().build();
+
             when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
+            when(balanceService.createBalance(any())).thenReturn(balance);
 
             var account = service.openAccount(userId);
 
@@ -46,14 +57,18 @@ class AccountServiceTest {
                     .returns(OPEN, AccountView::getState)
                     .returns(userId, AccountView::getUserId)
                     .returns(NOW, AccountView::getCreatedDate)
-                    .returns(OWNER, AccountView::getAccessType);
+                    .returns(OWNER, AccountView::getAccessType)
+                    .returns(balance.getAmount(), AccountView::getBalance);
         }
 
         @Test
         void persists_new_account() {
             var userId = randomUserId();
             var access = dummyAccountAccess().userId(userId).build();
+            var balance = dummyBalance().build();
+
             when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
+            when(balanceService.createBalance(any())).thenReturn(balance);
 
             var account = service.openAccount(userId);
 
@@ -69,12 +84,30 @@ class AccountServiceTest {
         void grants_owner_access_to_user() {
             var userId = randomUserId();
             var access = dummyAccountAccess().userId(userId).build();
+            var balance = dummyBalance().build();
+
             when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
+            when(balanceService.createBalance(any())).thenReturn(balance);
 
             var account = service.openAccount(userId);
 
             verify(accessService, times(1))
                     .grantAccess(account.getAccountId(), userId, OWNER);
+        }
+
+        @Test
+        void creates_balance_when_opening_an_account() {
+            var userId = randomUserId();
+            var access = dummyAccountAccess().userId(userId).build();
+            var balance = dummyBalance().build();
+
+            when(accessService.grantAccess(any(), any(), any())).thenReturn(access);
+            when(balanceService.createBalance(any())).thenReturn(balance);
+
+            var account = service.openAccount(userId);
+
+            verify(balanceService, times(1))
+                    .createBalance(account.getAccountId());
         }
     }
 
@@ -95,16 +128,20 @@ class AccountServiceTest {
                     .userId(userId)
                     .type(VIEWER)
                     .build();
+            var balance1 = dummyBalance().accountId(account1.getId()).amount(eur(20)).build();
+            var balance2 = dummyBalance().accountId(account2.getId()).amount(eur(50)).build();
 
             when(accessService.listAllAccountAccesses(userId))
                     .thenReturn(List.of(access1, access2));
+            when(balanceService.getBalances(Set.of(account1.getId(), account2.getId())))
+                    .thenReturn(List.of(balance1, balance2));
 
             var accounts = service.listUserAccounts(userId);
 
             assertThat(accounts).hasSize(2);
             assertThat(accounts).containsExactly(
-                    new AccountView(account1, access1),
-                    new AccountView(account2, access2)
+                    new AccountView(account1, access1, balance1),
+                    new AccountView(account2, access2, balance2)
             );
         }
     }
@@ -118,10 +155,12 @@ class AccountServiceTest {
             var accountId = randomAccountId();
             var account = createAccount(dummyAccount().id(accountId).userId(userId));
             var access = dummyAccountAccess().accountId(accountId).userId(userId).build();
-            var accountView = new AccountView(account, access);
+            var balance = dummyBalance().accountId(accountId).build();
+            var accountView = new AccountView(account, access, balance);
 
             when(accessService.findAccountAccess(accountId, userId))
                     .thenReturn(Optional.of(access));
+            when(balanceService.getBalance(accountId)).thenReturn(balance);
 
             var response = service.findUserAccount(userId, accountId);
 
@@ -138,10 +177,12 @@ class AccountServiceTest {
                     .userId(userId)
                     .type(VIEWER)
                     .build();
-            var accountView = new AccountView(account, access);
+            var balance = dummyBalance().accountId(accountId).build();
+            var accountView = new AccountView(account, access, balance);
 
             when(accessService.findAccountAccess(accountId, userId))
                     .thenReturn(Optional.of(access));
+            when(balanceService.getBalance(accountId)).thenReturn(balance);
 
             var response = service.findUserAccount(userId, accountId);
 
