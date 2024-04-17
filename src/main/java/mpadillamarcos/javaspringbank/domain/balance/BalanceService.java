@@ -27,7 +27,7 @@ public class BalanceService {
     }
 
     public List<Balance> getBalances(Set<AccountId> accountIds) {
-        return null;
+        return repository.getBalances(accountIds);
     }
 
     public Balance deposit(AccountId accountId, Money amount) {

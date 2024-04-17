@@ -1,8 +1,13 @@
 package mpadillamarcos.javaspringbank.domain.balance;
 
+import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.infra.balance.InMemoryBalanceRepository;
 import org.junit.jupiter.api.Test;
+
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
@@ -33,5 +38,21 @@ class BalanceServiceTest {
         assertThat(service.getBalance(accountId))
                 .returns(accountId, Balance::getAccountId)
                 .returns(Money.zero(EUR), Balance::getAmount);
+    }
+
+    @Test
+    void gets_multiple_balances_by_a_set_of_account_ids() {
+        var accountId1 = randomAccountId();
+        var accountId2 = randomAccountId();
+
+        Set<AccountId> accountIds = new LinkedHashSet<>();
+        accountIds.add(accountId1);
+        accountIds.add(accountId2);
+
+        var balance1 = service.createBalance(accountId1);
+        var balance2 = service.createBalance(accountId2);
+
+        assertThat(service.getBalances(accountIds))
+                .containsExactlyElementsOf(List.of(balance1, balance2));
     }
 }

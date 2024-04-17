@@ -5,8 +5,7 @@ import mpadillamarcos.javaspringbank.domain.balance.Balance;
 import mpadillamarcos.javaspringbank.domain.balance.BalanceRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Repository
 public class InMemoryBalanceRepository implements BalanceRepository {
@@ -21,5 +20,14 @@ public class InMemoryBalanceRepository implements BalanceRepository {
     @Override
     public Balance getBalance(AccountId accountId) {
         return balances.get(accountId);
+    }
+
+    @Override
+    public List<Balance> getBalances(Set<AccountId> accountIds) {
+        List<Balance> balancesList = new ArrayList<>();
+        for (AccountId accountId : accountIds) {
+            balancesList.add(balances.get(accountId));
+        }
+        return balancesList;
     }
 }
