@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import mpadillamarcos.javaspringbank.domain.access.AccessType;
 import mpadillamarcos.javaspringbank.domain.account.AccountState;
+import mpadillamarcos.javaspringbank.domain.money.Money;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -17,4 +18,5 @@ public class AccountViewDto {
     private Instant createdDate;
     private AccountState state;
     private AccessType accessType;
+    private Money balance;
 }

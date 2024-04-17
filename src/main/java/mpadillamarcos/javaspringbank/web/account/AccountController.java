@@ -63,6 +63,7 @@ public class AccountController {
                 .state(account.getState())
                 .createdDate(account.getCreatedDate())
                 .accessType(account.getAccessType())
+                .balance(account.getBalance())
                 .build();
     }
 }
