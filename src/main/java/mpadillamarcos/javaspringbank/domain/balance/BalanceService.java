@@ -8,19 +8,25 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Set;
 
+import static mpadillamarcos.javaspringbank.domain.balance.Balance.newBalance;
+
 @Service
 @RequiredArgsConstructor
 public class BalanceService {
+
+    private final BalanceRepository repository;
+
+    public Balance createBalance(AccountId accountId) {
+        var balance = newBalance().accountId(accountId).build();
+        repository.insert(balance);
+        return balance;
+    }
 
     public Balance getBalance(AccountId accountId) {
         return null;
     }
 
     public List<Balance> getBalances(Set<AccountId> accountIds) {
-        return null;
-    }
-
-    public Balance createBalance(AccountId accountId) {
         return null;
     }
 
