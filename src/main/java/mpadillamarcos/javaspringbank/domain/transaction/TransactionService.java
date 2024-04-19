@@ -111,6 +111,9 @@ public class TransactionService {
         repository.insert(depositTransaction);
     }
 
+    public void confirmTransaction(TransactionId transactionId) {
+    }
+
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {
         var access = accessService.findAccountAccess(originAccountId, userId)
                 .orElseThrow(() -> new AccessDeniedException("User " + userId.value() + " has no access to that account"));

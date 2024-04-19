@@ -4,22 +4,25 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.accountId;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.transactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.userId;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users/{userId}/accounts/{accountId}")
 public class TransactionController {
 
     private final TransactionService service;
 
-    @PostMapping("/transfers")
+    @PostMapping("/users/{userId}/accounts/{accountId}/transfers")
     public void createTransfer(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
@@ -36,7 +39,7 @@ public class TransactionController {
         );
     }
 
-    @PostMapping("/withdrawals")
+    @PostMapping("/users/{userId}/accounts/{accountId}/withdrawals")
     public void withdraw(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
@@ -52,7 +55,7 @@ public class TransactionController {
         );
     }
 
-    @PostMapping("/deposits")
+    @PostMapping("/users/{userId}/accounts/{accountId}/deposits")
     public void deposit(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
@@ -66,6 +69,10 @@ public class TransactionController {
                         .concept(request.getConcept())
                         .build()
         );
+    }
 
+    @PostMapping("/transactions/{transactionId}/confirm")
+    public void confirm(@PathVariable UUID transactionId) {
+        service.confirmTransaction(transactionId(transactionId));
     }
 }

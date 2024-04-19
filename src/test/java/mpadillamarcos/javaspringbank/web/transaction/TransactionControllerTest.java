@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.mockito.Mockito.times;
@@ -243,5 +244,27 @@ class TransactionControllerTest {
                             .build());
         }
 
+    }
+
+    @Nested
+    class ConfirmTransaction {
+
+        @Test
+        void returns_bad_request_when_transaction_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/transactions/5/confirm"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_all_parameters_are_valid() throws Exception {
+            var transactionId = randomTransactionId();
+
+            mockMvc.perform(post(
+                            "/transactions/{transactionId}/confirm", transactionId.value()))
+                    .andExpect(status().isOk());
+
+            verify(transactionService, times(1))
+                    .confirmTransaction(transactionId);
+        }
     }
 }
