@@ -19,8 +19,7 @@ import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirect
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 
 @Service
 @RequiredArgsConstructor
@@ -91,6 +90,25 @@ public class TransactionService {
     }
 
     public void deposit(TransactionRequest transactionRequest) {
+        var userId = transactionRequest.getUserId();
+        var accountId = transactionRequest.getOriginAccountId();
+
+        checkOriginAccount(accountId, userId);
+        balanceService.deposit(accountId, transactionRequest.getAmount());
+
+        var depositTransaction = newTransaction()
+                .groupId(randomTransactionGroupId())
+                .userId(userId)
+                .accountId(accountId)
+                .amount(transactionRequest.getAmount())
+                .createdDate(clock.now())
+                .type(DEPOSIT)
+                .state(CONFIRMED)
+                .direction(INCOMING)
+                .concept(transactionRequest.getConcept())
+                .build();
+
+        repository.insert(depositTransaction);
     }
 
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {

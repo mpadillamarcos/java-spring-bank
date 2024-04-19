@@ -25,8 +25,7 @@ import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.CLOSED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -338,6 +337,110 @@ class TransactionServiceTest {
                     .returns(newTransaction.getType(), Transaction::getType)
                     .returns(newTransaction.getDirection(), Transaction::getDirection)
                     .returns(newTransaction.getConcept(), Transaction::getConcept);
+        }
+
+        @Nested
+        class Deposit {
+
+            @Test
+            void throws_exception_when_user_has_no_access_to_account() {
+                var request = dummyDepositRequest();
+
+                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                        .thenReturn(empty());
+
+                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+            }
+
+            @Test
+            void throws_exception_when_user_access_is_revoked() {
+                var request = dummyDepositRequest();
+                var access = access(request, REVOKED, OPERATOR);
+
+                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                        .thenReturn(Optional.of(access));
+
+                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+            }
+
+            @Test
+            void throws_exception_when_user_type_is_viewer() {
+                var request = dummyDepositRequest();
+                var access = access(request, GRANTED, VIEWER);
+
+                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                        .thenReturn(Optional.of(access));
+
+                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+            }
+
+            @Test
+            void throws_exception_when_account_state_is_not_open() {
+                var request = dummyDepositRequest();
+                var userId = request.getUserId();
+                var accountId = request.getOriginAccountId();
+                var access = access(request);
+                var account = dummyAccount().userId(userId).id(accountId).state(BLOCKED).build();
+
+                when(accessService.findAccountAccess(accountId, userId))
+                        .thenReturn(Optional.of(access));
+                when(accountService.getById(accountId))
+                        .thenReturn(account);
+
+                assertThrows(TransactionNotAllowedException.class, () -> service.deposit(request));
+            }
+
+            @Test
+            void updates_account_balance() {
+                var request = dummyDepositRequest();
+                var userId = request.getUserId();
+                var accountId = request.getOriginAccountId();
+                var access = access(request);
+                var account = dummyAccount().userId(userId).id(accountId).build();
+
+                when(accessService.findAccountAccess(accountId, userId))
+                        .thenReturn(Optional.of(access));
+                when(accountService.getById(accountId))
+                        .thenReturn(account);
+
+                service.deposit(request);
+
+                verify(balanceService, times(1))
+                        .deposit(accountId, request.getAmount());
+            }
+
+            @Test
+            void creates_new_deposit() {
+                var request = dummyDepositRequest();
+                var userId = request.getUserId();
+                var accountId = request.getOriginAccountId();
+                var access = access(request);
+                var account = dummyAccount().userId(userId).id(accountId).build();
+                var newTransaction = dummyDeposit()
+                        .accountId(accountId)
+                        .userId(userId)
+                        .type(DEPOSIT)
+                        .state(CONFIRMED)
+                        .build();
+
+                when(accessService.findAccountAccess(accountId, userId))
+                        .thenReturn(Optional.of(access));
+                when(accountService.getById(accountId))
+                        .thenReturn(account);
+
+                service.deposit(request);
+
+                assertThat(repository.findLastTransactionByAccountId(accountId))
+                        .get()
+                        .returns(accountId, Transaction::getAccountId)
+                        .returns(userId, Transaction::getUserId)
+                        .returns(newTransaction.getAmount(), Transaction::getAmount)
+                        .returns(NOW, Transaction::getCreatedDate)
+                        .returns(newTransaction.getState(), Transaction::getState)
+                        .returns(newTransaction.getType(), Transaction::getType)
+                        .returns(newTransaction.getDirection(), Transaction::getDirection)
+                        .returns(newTransaction.getConcept(), Transaction::getConcept);
+            }
         }
     }
 

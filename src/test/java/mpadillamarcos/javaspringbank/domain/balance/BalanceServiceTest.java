@@ -4,6 +4,7 @@ import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.exception.InsufficientBalanceException;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.infra.balance.InMemoryBalanceRepository;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
@@ -59,24 +60,45 @@ class BalanceServiceTest {
                 .containsExactlyElementsOf(List.of(balance1, balance2));
     }
 
-    @Test
-    void throws_exception_when_withdrawal_exceeds_current_balance_amount() {
-        var accountId = randomAccountId();
-        service.createBalance(accountId);
+    @Nested
+    class Withdraw {
 
-        assertThrows(InsufficientBalanceException.class,
-                () -> service.withdraw(accountId, Money.eur(100))
-        );
+        @Test
+        void throws_exception_when_withdrawal_exceeds_current_balance_amount() {
+            var accountId = randomAccountId();
+            service.createBalance(accountId);
+
+            assertThrows(InsufficientBalanceException.class,
+                    () -> service.withdraw(accountId, Money.eur(100))
+            );
+        }
+
+        @Test
+        void updates_balance_when_withdrawal_does_not_exceed_current_balance() {
+            var accountId = randomAccountId();
+            var balance = newBalance().accountId(accountId).amount(Money.eur(200)).build();
+
+            repository.insert(balance);
+
+            assertThat(service.withdraw(accountId, Money.eur(150)))
+                    .returns(Money.eur(50), Balance::getAmount);
+        }
     }
 
-    @Test
-    void updates_balance_when_withdrawal_does_not_exceed_current_balance() {
-        var accountId = randomAccountId();
-        var balance = newBalance().accountId(accountId).amount(Money.eur(200)).build();
+    @Nested
+    class Deposit {
 
-        repository.insert(balance);
+        @Test
+        void updates_balance_with_deposit_amount() {
+            var accountId = randomAccountId();
+            var balance = newBalance().accountId(accountId).amount(Money.eur(200)).build();
 
-        assertThat(service.withdraw(accountId, Money.eur(150)))
-                .returns(Money.eur(50), Balance::getAmount);
+            repository.insert(balance);
+
+            assertThat(service.deposit(accountId, Money.eur(50)))
+                    .returns(Money.eur(250), Balance::getAmount);
+        }
     }
+
+
 }

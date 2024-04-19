@@ -31,8 +31,12 @@ public class BalanceService {
         return repository.getBalances(accountIds);
     }
 
-    public Balance deposit(AccountId accountId, Money amount) {
-        return null;
+    public Balance deposit(AccountId accountId, Money amountDeposit) {
+        var oldAmount = getBalance(accountId).getAmount().getAmount();
+        var newAmount = oldAmount.add(amountDeposit.getAmount()).doubleValue();
+        var newBalance = newBalance().accountId(accountId).amount(Money.eur(newAmount)).build();
+        repository.insert(newBalance);
+        return newBalance;
     }
 
     public Balance withdraw(AccountId accountId, Money withdrawal) {
