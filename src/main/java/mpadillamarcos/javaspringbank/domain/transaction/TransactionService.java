@@ -90,6 +90,9 @@ public class TransactionService {
         repository.insert(withdrawTransaction);
     }
 
+    public void deposit(TransactionRequest transactionRequest) {
+    }
+
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {
         var access = accessService.findAccountAccess(originAccountId, userId)
                 .orElseThrow(() -> new AccessDeniedException("User " + userId.value() + " has no access to that account"));
@@ -115,4 +118,5 @@ public class TransactionService {
     private void updateOriginAccountBalance(AccountId originAccountId, Money amount) {
         balanceService.withdraw(originAccountId, amount);
     }
+
 }

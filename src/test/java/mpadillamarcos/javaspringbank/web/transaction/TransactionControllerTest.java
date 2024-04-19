@@ -11,8 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -180,5 +179,69 @@ class TransactionControllerTest {
                             .concept(concept)
                             .build());
         }
+    }
+
+    @Nested
+    class Deposit {
+
+        @Test
+        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/deposits"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/deposits"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_bad_request_when_required_body_is_null() throws Exception {
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/deposits")
+                            .content("{}")
+                            .contentType(APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_all_required_parameters_are_valid() throws Exception {
+            var userId = randomUserId();
+            var accountId = randomAccountId();
+            var amount = eur(100);
+            var concept = "";
+
+            String requestBody = String.format(
+                    """
+                                {
+                                    "amount": {
+                                        "amount": %s,
+                                        "currency": "EUR"
+                                    },
+                                    "concept": "%s"
+                                }
+                            """,
+                    amount.getAmount(),
+                    concept
+            );
+
+            mockMvc.perform(post(
+                            "/users/{userId}/accounts/{accountId}/deposits",
+                            userId.value(),
+                            accountId.value())
+                            .content(requestBody)
+                            .contentType(APPLICATION_JSON))
+                    .andExpect(status().isOk());
+
+            verify(transactionService, times(1))
+                    .deposit(TransactionRequest.builder()
+                            .userId(userId)
+                            .originAccountId(accountId)
+                            .amount(amount)
+                            .type(DEPOSIT)
+                            .concept(concept)
+                            .build());
+        }
+
     }
 }

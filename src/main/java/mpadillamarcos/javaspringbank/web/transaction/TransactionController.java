@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.accountId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.userId;
 
 @RestController
@@ -41,7 +40,7 @@ public class TransactionController {
     public void withdraw(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
-            @Valid @RequestBody WithdrawRequest request) {
+            @Valid @RequestBody WithdrawOrDepositRequest request) {
         service.withdraw(
                 TransactionRequest.builder()
                         .amount(request.getAmount())
@@ -51,5 +50,22 @@ public class TransactionController {
                         .concept(request.getConcept())
                         .build()
         );
+    }
+
+    @PostMapping("/deposits")
+    public void deposit(
+            @PathVariable UUID userId,
+            @PathVariable UUID accountId,
+            @Valid @RequestBody WithdrawOrDepositRequest request) {
+        service.deposit(
+                TransactionRequest.builder()
+                        .amount(request.getAmount())
+                        .originAccountId(accountId(accountId))
+                        .userId(userId(userId))
+                        .type(DEPOSIT)
+                        .concept(request.getConcept())
+                        .build()
+        );
+
     }
 }
