@@ -10,11 +10,12 @@ import java.util.UUID;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.accountId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.userId;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users/{userId}/accounts/{originAccountId}")
+@RequestMapping("/users/{userId}/accounts/{accountId}")
 public class TransactionController {
 
     private final TransactionService service;
@@ -22,15 +23,33 @@ public class TransactionController {
     @PostMapping("/transfers")
     public void createTransfer(
             @PathVariable UUID userId,
-            @PathVariable UUID originAccountId,
+            @PathVariable UUID accountId,
             @Valid @RequestBody CreateTransferRequest request) {
         service.createTransfer(
                 TransactionRequest.builder()
                         .amount(request.getAmount())
                         .destinationAccountId(accountId(request.getDestinationAccountId()))
-                        .originAccountId(accountId(originAccountId))
+                        .originAccountId(accountId(accountId))
                         .userId(userId(userId))
                         .type(TRANSFER)
-                        .build());
+                        .concept(request.getConcept())
+                        .build()
+        );
+    }
+
+    @PostMapping("/withdrawals")
+    public void withdraw(
+            @PathVariable UUID userId,
+            @PathVariable UUID accountId,
+            @Valid @RequestBody WithdrawRequest request) {
+        service.withdraw(
+                TransactionRequest.builder()
+                        .amount(request.getAmount())
+                        .originAccountId(accountId(accountId))
+                        .userId(userId(userId))
+                        .type(WITHDRAW)
+                        .concept(request.getConcept())
+                        .build()
+        );
     }
 }

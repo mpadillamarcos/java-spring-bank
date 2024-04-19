@@ -89,4 +89,7 @@ public class TransactionService {
     private void updateOriginAccountBalance(AccountId originAccountId, Money amount) {
         balanceService.withdraw(originAccountId, amount);
     }
+
+    public void withdraw(TransactionRequest transactionRequest) {
+    }
 }
