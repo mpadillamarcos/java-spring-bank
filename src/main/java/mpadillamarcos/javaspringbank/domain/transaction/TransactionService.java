@@ -112,6 +112,12 @@ public class TransactionService {
     }
 
     public void confirmTransaction(TransactionId transactionId) {
+        var transaction = repository.findTransactionById(transactionId)
+                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId + " not found"));
+
+        balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
+
+        repository.updateState(transaction.getId(), CONFIRMED);
     }
 
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {

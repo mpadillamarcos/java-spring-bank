@@ -11,4 +11,6 @@ public interface TransactionRepository {
     Optional<Transaction> findTransactionById(TransactionId transactionId);
 
     Optional<Transaction> findLastTransactionByAccountId(AccountId accountId);
+
+    void updateState(TransactionId id, TransactionState state);
 }

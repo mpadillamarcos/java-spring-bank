@@ -9,6 +9,7 @@ import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.AccessDeniedException;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.exception.TransactionNotAllowedException;
+import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.infra.TestClock;
 import mpadillamarcos.javaspringbank.infra.transaction.InMemoryTransactionRepository;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +25,8 @@ import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.CLOSED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
@@ -338,111 +341,179 @@ class TransactionServiceTest {
                     .returns(newTransaction.getDirection(), Transaction::getDirection)
                     .returns(newTransaction.getConcept(), Transaction::getConcept);
         }
+    }
 
-        @Nested
-        class Deposit {
+    @Nested
+    class Deposit {
 
-            @Test
-            void throws_exception_when_user_has_no_access_to_account() {
-                var request = dummyDepositRequest();
+        @Test
+        void throws_exception_when_user_has_no_access_to_account() {
+            var request = dummyDepositRequest();
 
-                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
-                        .thenReturn(empty());
+            when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                    .thenReturn(empty());
 
-                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
-            }
+            assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+        }
 
-            @Test
-            void throws_exception_when_user_access_is_revoked() {
-                var request = dummyDepositRequest();
-                var access = access(request, REVOKED, OPERATOR);
+        @Test
+        void throws_exception_when_user_access_is_revoked() {
+            var request = dummyDepositRequest();
+            var access = access(request, REVOKED, OPERATOR);
 
-                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
-                        .thenReturn(Optional.of(access));
+            when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                    .thenReturn(Optional.of(access));
 
-                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
-            }
+            assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+        }
 
-            @Test
-            void throws_exception_when_user_type_is_viewer() {
-                var request = dummyDepositRequest();
-                var access = access(request, GRANTED, VIEWER);
+        @Test
+        void throws_exception_when_user_type_is_viewer() {
+            var request = dummyDepositRequest();
+            var access = access(request, GRANTED, VIEWER);
 
-                when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
-                        .thenReturn(Optional.of(access));
+            when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
+                    .thenReturn(Optional.of(access));
 
-                assertThrows(AccessDeniedException.class, () -> service.deposit(request));
-            }
+            assertThrows(AccessDeniedException.class, () -> service.deposit(request));
+        }
 
-            @Test
-            void throws_exception_when_account_state_is_not_open() {
-                var request = dummyDepositRequest();
-                var userId = request.getUserId();
-                var accountId = request.getOriginAccountId();
-                var access = access(request);
-                var account = dummyAccount().userId(userId).id(accountId).state(BLOCKED).build();
+        @Test
+        void throws_exception_when_account_state_is_not_open() {
+            var request = dummyDepositRequest();
+            var userId = request.getUserId();
+            var accountId = request.getOriginAccountId();
+            var access = access(request);
+            var account = dummyAccount().userId(userId).id(accountId).state(BLOCKED).build();
 
-                when(accessService.findAccountAccess(accountId, userId))
-                        .thenReturn(Optional.of(access));
-                when(accountService.getById(accountId))
-                        .thenReturn(account);
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
 
-                assertThrows(TransactionNotAllowedException.class, () -> service.deposit(request));
-            }
+            assertThrows(TransactionNotAllowedException.class, () -> service.deposit(request));
+        }
 
-            @Test
-            void updates_account_balance() {
-                var request = dummyDepositRequest();
-                var userId = request.getUserId();
-                var accountId = request.getOriginAccountId();
-                var access = access(request);
-                var account = dummyAccount().userId(userId).id(accountId).build();
+        @Test
+        void updates_account_balance() {
+            var request = dummyDepositRequest();
+            var userId = request.getUserId();
+            var accountId = request.getOriginAccountId();
+            var access = access(request);
+            var account = dummyAccount().userId(userId).id(accountId).build();
 
-                when(accessService.findAccountAccess(accountId, userId))
-                        .thenReturn(Optional.of(access));
-                when(accountService.getById(accountId))
-                        .thenReturn(account);
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
 
-                service.deposit(request);
+            service.deposit(request);
 
-                verify(balanceService, times(1))
-                        .deposit(accountId, request.getAmount());
-            }
+            verify(balanceService, times(1))
+                    .deposit(accountId, request.getAmount());
+        }
 
-            @Test
-            void creates_new_deposit() {
-                var request = dummyDepositRequest();
-                var userId = request.getUserId();
-                var accountId = request.getOriginAccountId();
-                var access = access(request);
-                var account = dummyAccount().userId(userId).id(accountId).build();
-                var newTransaction = dummyDeposit()
-                        .accountId(accountId)
-                        .userId(userId)
-                        .type(DEPOSIT)
-                        .state(CONFIRMED)
-                        .build();
+        @Test
+        void creates_new_deposit() {
+            var request = dummyDepositRequest();
+            var userId = request.getUserId();
+            var accountId = request.getOriginAccountId();
+            var access = access(request);
+            var account = dummyAccount().userId(userId).id(accountId).build();
+            var newTransaction = dummyDeposit()
+                    .accountId(accountId)
+                    .userId(userId)
+                    .type(DEPOSIT)
+                    .state(CONFIRMED)
+                    .build();
 
-                when(accessService.findAccountAccess(accountId, userId))
-                        .thenReturn(Optional.of(access));
-                when(accountService.getById(accountId))
-                        .thenReturn(account);
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
 
-                service.deposit(request);
+            service.deposit(request);
 
-                assertThat(repository.findLastTransactionByAccountId(accountId))
-                        .get()
-                        .returns(accountId, Transaction::getAccountId)
-                        .returns(userId, Transaction::getUserId)
-                        .returns(newTransaction.getAmount(), Transaction::getAmount)
-                        .returns(NOW, Transaction::getCreatedDate)
-                        .returns(newTransaction.getState(), Transaction::getState)
-                        .returns(newTransaction.getType(), Transaction::getType)
-                        .returns(newTransaction.getDirection(), Transaction::getDirection)
-                        .returns(newTransaction.getConcept(), Transaction::getConcept);
-            }
+            assertThat(repository.findLastTransactionByAccountId(accountId))
+                    .get()
+                    .returns(accountId, Transaction::getAccountId)
+                    .returns(userId, Transaction::getUserId)
+                    .returns(newTransaction.getAmount(), Transaction::getAmount)
+                    .returns(NOW, Transaction::getCreatedDate)
+                    .returns(CONFIRMED, Transaction::getState)
+                    .returns(DEPOSIT, Transaction::getType)
+                    .returns(INCOMING, Transaction::getDirection)
+                    .returns(newTransaction.getConcept(), Transaction::getConcept);
         }
     }
+
+    @Nested
+    class ConfirmTransaction {
+
+        @Test
+        void throws_not_found_exception_when_transaction_id_does_not_exist() {
+            var transactionId = randomTransactionId();
+
+            assertThrows(NotFoundException.class, () -> service.confirmTransaction(transactionId));
+        }
+
+        @Test
+        void updates_account_balance() {
+            var transaction = dummyTransfer().direction(INCOMING).build();
+            var transactionId = transaction.getId();
+            var accountId = transaction.getAccountId();
+            repository.insert(transaction);
+
+            service.confirmTransaction(transactionId);
+
+            verify(balanceService, times(1))
+                    .deposit(accountId, transaction.getAmount());
+        }
+
+        @Test
+        void updates_transaction_state_in_incoming_transfer() {
+            var transaction = dummyTransfer().direction(INCOMING).createdDate(NOW).build();
+            var transactionId = transaction.getId();
+            repository.insert(transaction);
+
+            service.confirmTransaction(transactionId);
+
+            assertThat(repository.findTransactionById(transactionId))
+                    .get()
+                    .returns(transaction.getAccountId(), Transaction::getAccountId)
+                    .returns(transaction.getUserId(), Transaction::getUserId)
+                    .returns(transaction.getAmount(), Transaction::getAmount)
+                    .returns(NOW, Transaction::getCreatedDate)
+                    .returns(CONFIRMED, Transaction::getState)
+                    .returns(TRANSFER, Transaction::getType)
+                    .returns(INCOMING, Transaction::getDirection)
+                    .returns(transaction.getConcept(), Transaction::getConcept);
+        }
+
+        @Test
+        void updates_transaction_state_in_outgoing_transfer() {
+            var incomingTransaction = dummyTransfer().direction(INCOMING).createdDate(NOW).build();
+            var incomingTransactionId = incomingTransaction.getId();
+            var outgoingTransaction = dummyTransfer().groupId(incomingTransaction.getGroupId()).direction(OUTGOING).createdDate(NOW).build();
+            var outgoingTransactionId = outgoingTransaction.getId();
+            repository.insert(incomingTransaction);
+            repository.insert(outgoingTransaction);
+
+            service.confirmTransaction(incomingTransactionId);
+
+            assertThat(repository.findTransactionById(outgoingTransactionId))
+                    .get()
+                    .returns(outgoingTransaction.getAccountId(), Transaction::getAccountId)
+                    .returns(outgoingTransaction.getUserId(), Transaction::getUserId)
+                    .returns(outgoingTransaction.getAmount(), Transaction::getAmount)
+                    .returns(NOW, Transaction::getCreatedDate)
+                    .returns(CONFIRMED, Transaction::getState)
+                    .returns(TRANSFER, Transaction::getType)
+                    .returns(OUTGOING, Transaction::getDirection)
+                    .returns(outgoingTransaction.getConcept(), Transaction::getConcept);
+        }
+    }
+
 
     private static AccountAccess access(TransactionRequest request) {
         return access(request, GRANTED, OWNER);
