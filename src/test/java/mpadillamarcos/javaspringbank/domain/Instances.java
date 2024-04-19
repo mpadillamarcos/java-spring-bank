@@ -16,7 +16,8 @@ import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 
 public class Instances {
@@ -55,9 +56,29 @@ public class Instances {
                 .groupId(randomTransactionGroupId())
                 .userId(randomUserId())
                 .accountId(randomAccountId())
-                .amount(eur(100d))
+                .amount(eur(100))
                 .createdDate(now())
                 .type(TRANSFER)
+                .direction(OUTGOING);
+    }
+
+    public static TransactionRequest dummyWithdrawRequest() {
+        return TransactionRequest.builder()
+                .userId(randomUserId())
+                .originAccountId(randomAccountId())
+                .amount(eur(50))
+                .type(WITHDRAW)
+                .build();
+    }
+
+    public static Transaction.TransactionBuilder dummyWithdraw() {
+        return newTransaction()
+                .groupId(randomTransactionGroupId())
+                .userId(randomUserId())
+                .accountId(randomAccountId())
+                .amount(eur(50))
+                .createdDate(now())
+                .type(WITHDRAW)
                 .direction(OUTGOING);
     }
 }

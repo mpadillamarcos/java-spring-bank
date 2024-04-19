@@ -18,7 +18,9 @@ import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTr
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.WITHDRAW;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +50,7 @@ public class TransactionService {
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(OUTGOING)
+                .concept(transactionRequest.getConcept())
                 .build();
 
         var incomingTransaction = newTransaction()
@@ -58,10 +61,33 @@ public class TransactionService {
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(INCOMING)
+                .concept(transactionRequest.getConcept())
                 .build();
 
         repository.insert(outgoingTransaction);
         repository.insert(incomingTransaction);
+    }
+
+    public void withdraw(TransactionRequest transactionRequest) {
+        var userId = transactionRequest.getUserId();
+        var accountId = transactionRequest.getOriginAccountId();
+
+        checkOriginAccount(accountId, userId);
+        updateOriginAccountBalance(accountId, transactionRequest.getAmount());
+
+        var withdrawTransaction = newTransaction()
+                .groupId(randomTransactionGroupId())
+                .userId(userId)
+                .accountId(accountId)
+                .amount(transactionRequest.getAmount())
+                .createdDate(clock.now())
+                .type(WITHDRAW)
+                .state(CONFIRMED)
+                .direction(OUTGOING)
+                .concept(transactionRequest.getConcept())
+                .build();
+
+        repository.insert(withdrawTransaction);
     }
 
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {
@@ -88,8 +114,5 @@ public class TransactionService {
 
     private void updateOriginAccountBalance(AccountId originAccountId, Money amount) {
         balanceService.withdraw(originAccountId, amount);
-    }
-
-    public void withdraw(TransactionRequest transactionRequest) {
     }
 }
