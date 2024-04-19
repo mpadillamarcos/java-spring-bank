@@ -10,6 +10,7 @@ import java.time.Instant;
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.GRANTED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
 @Builder(toBuilder = true)
@@ -58,5 +59,9 @@ public class AccountAccess {
         return toBuilder()
                 .state(REVOKED)
                 .build();
+    }
+
+    public boolean canOperate() {
+        return (this.type != VIEWER && this.state != REVOKED);
     }
 }

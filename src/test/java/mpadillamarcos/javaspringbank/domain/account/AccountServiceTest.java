@@ -191,6 +191,30 @@ class AccountServiceTest {
     }
 
     @Nested
+    class IsAccountPresent {
+
+        @Test
+        void returns_false_when_account_does_not_exist() {
+            var accountId = randomAccountId();
+
+            var response = service.exists(accountId);
+
+            assertThat(response).isEqualTo(false);
+        }
+
+        @Test
+        void returns_true_when_account_exists() {
+            var account = dummyAccount().build();
+
+            repository.insert(account);
+
+            var response = service.exists(account.getId());
+
+            assertThat(response).isEqualTo(true);
+        }
+    }
+
+    @Nested
     class BlockUserAccount {
 
         @Test

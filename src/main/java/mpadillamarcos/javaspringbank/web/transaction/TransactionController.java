@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.web.transaction;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,10 +24,11 @@ public class TransactionController {
             @PathVariable UUID originAccountId,
             @Valid @RequestBody CreateTransactionRequest request) {
         service.createTransaction(
-                userId(userId),
-                accountId(originAccountId),
-                accountId(request.getDestinationAccountId()),
-                request.getAmount()
-        );
+                TransactionRequest.builder()
+                        .amount(request.getAmount())
+                        .destinationAccountId(accountId(request.getDestinationAccountId()))
+                        .originAccountId(accountId(originAccountId))
+                        .userId(userId(userId))
+                        .build());
     }
 }

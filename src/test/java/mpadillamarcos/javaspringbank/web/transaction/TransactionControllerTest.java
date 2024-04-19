@@ -1,5 +1,6 @@
 package mpadillamarcos.javaspringbank.web.transaction;
 
+import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -102,7 +103,12 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .createTransaction(userId, originAccountId, destinationAccountId, amount);
+                    .createTransaction(TransactionRequest.builder()
+                            .userId(userId)
+                            .originAccountId(originAccountId)
+                            .destinationAccountId(destinationAccountId)
+                            .amount(amount)
+                            .build());
         }
     }
 }

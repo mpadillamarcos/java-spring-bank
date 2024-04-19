@@ -20,7 +20,7 @@ public class TransactionId extends Id<UUID> {
         return transactionId(randomUUID());
     }
 
-    private static TransactionId transactionId(UUID value) {
+    public static TransactionId transactionId(UUID value) {
         return new TransactionId(value);
     }
 }

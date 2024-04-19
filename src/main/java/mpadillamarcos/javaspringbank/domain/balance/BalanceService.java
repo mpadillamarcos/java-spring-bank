@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.domain.balance;
 
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
+import mpadillamarcos.javaspringbank.domain.exception.InsufficientBalanceException;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +35,18 @@ public class BalanceService {
         return null;
     }
 
-    public Balance withdraw(AccountId accountId, Money amount) {
-        return null;
+    public Balance withdraw(AccountId accountId, Money withdrawal) {
+        var oldAmount = getBalance(accountId).getAmount().getAmount();
+        int amountsComparison = oldAmount.compareTo(withdrawal.getAmount());
+        if (amountsComparison < 0) {
+            throw new InsufficientBalanceException(
+                    "The withdrawal (" + withdrawal.getAmount() + ") exceeds the current balance in the account"
+            );
+        }
+        var newAmount = oldAmount.subtract(withdrawal.getAmount()).doubleValue();
+        var newBalance = newBalance().accountId(accountId).amount(Money.eur(newAmount)).build();
+        repository.insert(newBalance);
+        return newBalance;
     }
 
 }

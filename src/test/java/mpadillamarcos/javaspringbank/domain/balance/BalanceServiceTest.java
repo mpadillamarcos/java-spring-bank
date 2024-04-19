@@ -1,6 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.balance;
 
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
+import mpadillamarcos.javaspringbank.domain.exception.InsufficientBalanceException;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.infra.balance.InMemoryBalanceRepository;
 import org.junit.jupiter.api.Test;
@@ -10,8 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
+import static mpadillamarcos.javaspringbank.domain.balance.Balance.newBalance;
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BalanceServiceTest {
 
@@ -54,5 +57,26 @@ class BalanceServiceTest {
 
         assertThat(service.getBalances(accountIds))
                 .containsExactlyElementsOf(List.of(balance1, balance2));
+    }
+
+    @Test
+    void throws_exception_when_withdrawal_exceeds_current_balance_amount() {
+        var accountId = randomAccountId();
+        service.createBalance(accountId);
+
+        assertThrows(InsufficientBalanceException.class,
+                () -> service.withdraw(accountId, Money.eur(100))
+        );
+    }
+
+    @Test
+    void updates_balance_when_withdrawal_does_not_exceed_current_balance() {
+        var accountId = randomAccountId();
+        var balance = newBalance().accountId(accountId).amount(Money.eur(200)).build();
+
+        repository.insert(balance);
+
+        assertThat(service.withdraw(accountId, Money.eur(150)))
+                .returns(Money.eur(50), Balance::getAmount);
     }
 }

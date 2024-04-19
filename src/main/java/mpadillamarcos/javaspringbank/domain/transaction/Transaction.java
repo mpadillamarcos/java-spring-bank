@@ -8,7 +8,6 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 
 import java.time.Instant;
 
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
@@ -49,7 +48,6 @@ public class Transaction {
     public static TransactionBuilder newTransaction() {
         return builder()
                 .id(randomTransactionId())
-                .groupId(randomTransactionGroupId())
                 .state(PENDING);
     }
 

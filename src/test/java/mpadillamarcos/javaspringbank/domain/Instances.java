@@ -1,8 +1,8 @@
 package mpadillamarcos.javaspringbank.domain;
 
 import mpadillamarcos.javaspringbank.domain.balance.Balance;
-import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
+import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
 
 import static java.time.Instant.now;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
@@ -12,7 +12,9 @@ import static mpadillamarcos.javaspringbank.domain.account.Account.AccountBuilde
 import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.balance.Balance.newBalance;
+import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 
@@ -37,11 +39,21 @@ public class Instances {
                 .accountId(randomAccountId());
     }
 
+    public static TransactionRequest dummyTransactionRequest() {
+        return TransactionRequest.builder()
+                .userId(randomUserId())
+                .originAccountId(randomAccountId())
+                .destinationAccountId(randomAccountId())
+                .amount(eur(100))
+                .build();
+    }
+
     public static Transaction.TransactionBuilder dummyTransaction() {
         return newTransaction()
+                .groupId(randomTransactionGroupId())
                 .userId(randomUserId())
                 .accountId(randomAccountId())
-                .amount(Money.eur(100d))
+                .amount(eur(100d))
                 .createdDate(now())
                 .type(OUTGOING);
     }
