@@ -23,7 +23,8 @@ import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.*;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.BLOCKED;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.CLOSED;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.INCOMING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,43 +41,43 @@ class TransactionServiceTest {
     );
 
     @Nested
-    class CreateTransaction {
+    class CreateTransfer {
 
         @Test
         void throws_exception_when_user_has_no_access_to_origin_account() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
 
             when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
                     .thenReturn(empty());
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransaction(request));
+            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void throws_exception_when_user_access_is_revoked() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var access = access(request, REVOKED, OPERATOR);
 
             when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
                     .thenReturn(Optional.of(access));
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransaction(request));
+            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void throws_exception_when_user_type_is_viewer() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var access = access(request, GRANTED, VIEWER);
 
             when(accessService.findAccountAccess(request.getOriginAccountId(), request.getUserId()))
                     .thenReturn(Optional.of(access));
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransaction(request));
+            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void throws_exception_when_origin_account_state_is_not_open() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var userId = request.getUserId();
             var accountId = request.getOriginAccountId();
             var access = access(request);
@@ -87,12 +88,12 @@ class TransactionServiceTest {
             when(accountService.getById(accountId))
                     .thenReturn(account);
 
-            assertThrows(TransactionNotAllowedException.class, () -> service.createTransaction(request));
+            assertThrows(TransactionNotAllowedException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void throws_not_found_exception_when_destination_account_does_not_exist() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var userId = request.getUserId();
             var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
@@ -106,12 +107,12 @@ class TransactionServiceTest {
             when(accountService.exists(destinationAccountId))
                     .thenReturn(false);
 
-            assertThrows(NotFoundException.class, () -> service.createTransaction(request));
+            assertThrows(NotFoundException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void throws_exception_when_destination_account_state_is_not_open() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var userId = request.getUserId();
             var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
@@ -128,12 +129,12 @@ class TransactionServiceTest {
             when(accountService.getById(destinationAccountId))
                     .thenReturn(destinationAccount);
 
-            assertThrows(TransactionNotAllowedException.class, () -> service.createTransaction(request));
+            assertThrows(TransactionNotAllowedException.class, () -> service.createTransfer(request));
         }
 
         @Test
         void updates_origin_account_balance() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var userId = request.getUserId();
             var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
@@ -150,7 +151,7 @@ class TransactionServiceTest {
             when(accountService.getById(destinationAccountId))
                     .thenReturn(destinationAccount);
 
-            service.createTransaction(request);
+            service.createTransfer(request);
 
             verify(balanceService, times(1))
                     .withdraw(originAccountId, request.getAmount());
@@ -158,49 +159,17 @@ class TransactionServiceTest {
 
         @Test
         void creates_new_transaction_for_the_origin_account_user() {
-            var request = dummyTransactionRequest();
+            var request = dummyTransferRequest();
             var userId = request.getUserId();
             var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var access = access(request);
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
             var destinationAccount = dummyAccount().id(destinationAccountId).build();
-            var newTransaction = dummyTransaction().accountId(originAccountId).userId(request.getUserId()).build();
-
-            when(accessService.findAccountAccess(originAccountId, request.getUserId()))
-                    .thenReturn(Optional.of(access));
-            when(accountService.getById(originAccountId))
-                    .thenReturn(originAccount);
-            when(accountService.exists(destinationAccountId))
-                    .thenReturn(true);
-            when(accountService.getById(destinationAccountId))
-                    .thenReturn(destinationAccount);
-
-            service.createTransaction(request);
-
-            assertThat(repository.findLastTransactionByAccountId(originAccountId))
-                    .get()
-                    .returns(originAccountId, Transaction::getAccountId)
-                    .returns(newTransaction.getUserId(), Transaction::getUserId)
-                    .returns(newTransaction.getAmount(), Transaction::getAmount)
-                    .returns(NOW, Transaction::getCreatedDate)
-                    .returns(newTransaction.getState(), Transaction::getState)
-                    .returns(newTransaction.getType(), Transaction::getType);
-        }
-
-        @Test
-        void creates_new_transaction_for_the_destination_account_user() {
-            var request = dummyTransactionRequest();
-            var userId = request.getUserId();
-            var originAccountId = request.getOriginAccountId();
-            var destinationAccountId = request.getDestinationAccountId();
-            var access = access(request);
-            var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var destinationAccount = dummyAccount().id(destinationAccountId).build();
-            var newTransaction = dummyTransaction()
-                    .accountId(destinationAccountId)
+            var newTransaction = dummyTransfer()
+                    .accountId(originAccountId)
                     .userId(request.getUserId())
-                    .type(INCOMING)
+                    .type(TRANSFER)
                     .build();
 
             when(accessService.findAccountAccess(originAccountId, request.getUserId()))
@@ -212,7 +181,45 @@ class TransactionServiceTest {
             when(accountService.getById(destinationAccountId))
                     .thenReturn(destinationAccount);
 
-            service.createTransaction(request);
+            service.createTransfer(request);
+
+            assertThat(repository.findLastTransactionByAccountId(originAccountId))
+                    .get()
+                    .returns(originAccountId, Transaction::getAccountId)
+                    .returns(newTransaction.getUserId(), Transaction::getUserId)
+                    .returns(newTransaction.getAmount(), Transaction::getAmount)
+                    .returns(NOW, Transaction::getCreatedDate)
+                    .returns(newTransaction.getState(), Transaction::getState)
+                    .returns(newTransaction.getType(), Transaction::getType)
+                    .returns(newTransaction.getDirection(), Transaction::getDirection);
+        }
+
+        @Test
+        void creates_new_transaction_for_the_destination_account_user() {
+            var request = dummyTransferRequest();
+            var userId = request.getUserId();
+            var originAccountId = request.getOriginAccountId();
+            var destinationAccountId = request.getDestinationAccountId();
+            var access = access(request);
+            var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
+            var destinationAccount = dummyAccount().id(destinationAccountId).build();
+            var newTransaction = dummyTransfer()
+                    .accountId(destinationAccountId)
+                    .userId(request.getUserId())
+                    .type(TRANSFER)
+                    .direction(INCOMING)
+                    .build();
+
+            when(accessService.findAccountAccess(originAccountId, request.getUserId()))
+                    .thenReturn(Optional.of(access));
+            when(accountService.getById(originAccountId))
+                    .thenReturn(originAccount);
+            when(accountService.exists(destinationAccountId))
+                    .thenReturn(true);
+            when(accountService.getById(destinationAccountId))
+                    .thenReturn(destinationAccount);
+
+            service.createTransfer(request);
 
             assertThat(repository.findLastTransactionByAccountId(destinationAccountId))
                     .get()
@@ -221,7 +228,8 @@ class TransactionServiceTest {
                     .returns(newTransaction.getAmount(), Transaction::getAmount)
                     .returns(NOW, Transaction::getCreatedDate)
                     .returns(newTransaction.getState(), Transaction::getState)
-                    .returns(newTransaction.getType(), Transaction::getType);
+                    .returns(newTransaction.getType(), Transaction::getType)
+                    .returns(newTransaction.getDirection(), Transaction::getDirection);
         }
     }
 

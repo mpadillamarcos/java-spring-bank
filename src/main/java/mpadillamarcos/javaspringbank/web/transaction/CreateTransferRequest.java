@@ -7,7 +7,7 @@ import mpadillamarcos.javaspringbank.domain.money.Money;
 import java.util.UUID;
 
 @Data
-public class CreateTransactionRequest {
+public class CreateTransferRequest {
 
     @NotNull
     private Money amount;

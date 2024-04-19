@@ -14,4 +14,6 @@ public class TransactionRequest {
     AccountId destinationAccountId;
     UserId userId;
     Money amount;
+    TransactionType type;
+    String concept;
 }

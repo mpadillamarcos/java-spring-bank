@@ -14,8 +14,9 @@ import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccou
 import static mpadillamarcos.javaspringbank.domain.balance.Balance.newBalance;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.OUTGOING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 
 public class Instances {
@@ -39,22 +40,24 @@ public class Instances {
                 .accountId(randomAccountId());
     }
 
-    public static TransactionRequest dummyTransactionRequest() {
+    public static TransactionRequest dummyTransferRequest() {
         return TransactionRequest.builder()
                 .userId(randomUserId())
                 .originAccountId(randomAccountId())
                 .destinationAccountId(randomAccountId())
                 .amount(eur(100))
+                .type(TRANSFER)
                 .build();
     }
 
-    public static Transaction.TransactionBuilder dummyTransaction() {
+    public static Transaction.TransactionBuilder dummyTransfer() {
         return newTransaction()
                 .groupId(randomTransactionGroupId())
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(100d))
                 .createdDate(now())
-                .type(OUTGOING);
+                .type(TRANSFER)
+                .direction(OUTGOING);
     }
 }

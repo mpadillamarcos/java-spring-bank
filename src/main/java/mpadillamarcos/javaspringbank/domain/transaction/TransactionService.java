@@ -15,9 +15,10 @@ import org.springframework.stereotype.Service;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.INCOMING;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.OUTGOING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,7 @@ public class TransactionService {
     private final BalanceService balanceService;
     private final Clock clock;
 
-    public void createTransaction(TransactionRequest transactionRequest) {
+    public void createTransfer(TransactionRequest transactionRequest) {
         var userId = transactionRequest.getUserId();
         var originAccountId = transactionRequest.getOriginAccountId();
         var destinationAccountId = transactionRequest.getDestinationAccountId();
@@ -45,7 +46,8 @@ public class TransactionService {
                 .accountId(originAccountId)
                 .amount(transactionRequest.getAmount())
                 .createdDate(clock.now())
-                .type(OUTGOING)
+                .type(TRANSFER)
+                .direction(OUTGOING)
                 .build();
 
         var incomingTransaction = newTransaction()
@@ -54,7 +56,8 @@ public class TransactionService {
                 .accountId(destinationAccountId)
                 .amount(transactionRequest.getAmount())
                 .createdDate(clock.now())
-                .type(INCOMING)
+                .type(TRANSFER)
+                .direction(INCOMING)
                 .build();
 
         repository.insert(outgoingTransaction);

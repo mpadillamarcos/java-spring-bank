@@ -9,13 +9,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Instant;
 import java.util.List;
 
-import static mpadillamarcos.javaspringbank.domain.Instances.dummyTransaction;
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyTransfer;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.OUTGOING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,7 +40,8 @@ class TransactionTest {
         var amount = Money.eur(1000);
         var createdDate = Instant.now();
         var state = PENDING;
-        var type = OUTGOING;
+        var direction = OUTGOING;
+        var type = TRANSFER;
 
         var transaction = newTransaction()
                 .id(id)
@@ -49,6 +51,7 @@ class TransactionTest {
                 .amount(amount)
                 .createdDate(createdDate)
                 .state(state)
+                .direction(direction)
                 .type(type)
                 .build();
 
@@ -60,19 +63,21 @@ class TransactionTest {
                 .returns(amount, Transaction::getAmount)
                 .returns(createdDate, Transaction::getCreatedDate)
                 .returns(state, Transaction::getState)
+                .returns(direction, Transaction::getDirection)
                 .returns(type, Transaction::getType);
     }
 
     static List<Arguments> transactionsWithMissingData() {
         return List.of(
-                Arguments.arguments("id", dummyTransaction().id(null)),
-                Arguments.arguments("groupId", dummyTransaction().groupId(null)),
-                Arguments.arguments("userId", dummyTransaction().userId(null)),
-                Arguments.arguments("accountId", dummyTransaction().accountId(null)),
-                Arguments.arguments("amount", dummyTransaction().amount(null)),
-                Arguments.arguments("createdDate", dummyTransaction().createdDate(null)),
-                Arguments.arguments("state", dummyTransaction().state(null)),
-                Arguments.arguments("type", dummyTransaction().type(null))
+                Arguments.arguments("id", dummyTransfer().id(null)),
+                Arguments.arguments("groupId", dummyTransfer().groupId(null)),
+                Arguments.arguments("userId", dummyTransfer().userId(null)),
+                Arguments.arguments("accountId", dummyTransfer().accountId(null)),
+                Arguments.arguments("amount", dummyTransfer().amount(null)),
+                Arguments.arguments("createdDate", dummyTransfer().createdDate(null)),
+                Arguments.arguments("state", dummyTransfer().state(null)),
+                Arguments.arguments("direction", dummyTransfer().direction(null)),
+                Arguments.arguments("type", dummyTransfer().type(null))
         );
     }
 }

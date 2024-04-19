@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,23 +28,23 @@ class TransactionControllerTest {
     private TransactionService transactionService;
 
     @Nested
-    class NewTransaction {
+    class CreateTransfer {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/transactions"))
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/transfers"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/transactions"))
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/transfers"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_required_body_is_null() throws Exception {
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transactions")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfers")
                             .content("{}")
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -64,10 +65,10 @@ class TransactionControllerTest {
                                 }
                             }
                             """,
-                    amount.getAmount(),
-                    amount.getCurrency()
+                    destinationAccountId,
+                    amount.getAmount()
             );
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transactions")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfers")
                             .content(requestBody)
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -95,7 +96,7 @@ class TransactionControllerTest {
             );
 
             mockMvc.perform(post(
-                            "/users/{userId}/accounts/{originAccountId}/transactions",
+                            "/users/{userId}/accounts/{originAccountId}/transfers",
                             userId.value(),
                             originAccountId.value())
                             .content(requestBody)
@@ -103,11 +104,12 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .createTransaction(TransactionRequest.builder()
+                    .createTransfer(TransactionRequest.builder()
                             .userId(userId)
                             .originAccountId(originAccountId)
                             .destinationAccountId(destinationAccountId)
                             .amount(amount)
+                            .type(TRANSFER)
                             .build());
         }
     }

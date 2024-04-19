@@ -23,7 +23,9 @@ public class Transaction {
     Money amount;
     Instant createdDate;
     TransactionState state;
+    TransactionDirection direction;
     TransactionType type;
+    String concept;
 
     public Transaction(
             TransactionId id,
@@ -33,7 +35,9 @@ public class Transaction {
             Money amount,
             Instant createdDate,
             TransactionState state,
-            TransactionType type
+            TransactionDirection direction,
+            TransactionType type,
+            String concept
     ) {
         this.id = require("id", id);
         this.groupId = require("groupId", groupId);
@@ -42,7 +46,9 @@ public class Transaction {
         this.amount = require("amount", amount);
         this.createdDate = require("createdDate", createdDate);
         this.state = require("state", state);
+        this.direction = require("direction", direction);
         this.type = require("type", type);
+        this.concept = concept;
     }
 
     public static TransactionBuilder newTransaction() {
