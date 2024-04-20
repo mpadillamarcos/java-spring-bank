@@ -4,11 +4,9 @@ import mpadillamarcos.javaspringbank.domain.account.Account;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.account.AccountRepository;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
-import org.springframework.stereotype.Repository;
 
 import java.util.*;
 
-@Repository
 public class InMemoryAccountRepository implements AccountRepository {
 
     private final Map<AccountId, Account> accounts = new HashMap<>();

@@ -4,7 +4,6 @@ import mpadillamarcos.javaspringbank.domain.balance.Balance;
 import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
 
-import static java.time.Instant.now;
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.access.AccountAccess.AccountAccessBuilder;
 import static mpadillamarcos.javaspringbank.domain.access.AccountAccess.newAccountAccess;
@@ -19,12 +18,13 @@ import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirect
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
+import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 
 public class Instances {
 
     public static AccountBuilder dummyAccount() {
         return newAccount()
-                .createdDate(now())
+                .createdDate(NOW)
                 .userId(randomUserId());
     }
 
@@ -32,7 +32,7 @@ public class Instances {
         return newAccountAccess()
                 .accountId(randomAccountId())
                 .type(OWNER)
-                .createdDate(now())
+                .createdDate(NOW)
                 .userId(randomUserId());
     }
 
@@ -57,7 +57,7 @@ public class Instances {
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(100))
-                .createdDate(now())
+                .createdDate(NOW)
                 .type(TRANSFER)
                 .direction(OUTGOING);
     }
@@ -77,7 +77,7 @@ public class Instances {
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(50))
-                .createdDate(now())
+                .createdDate(NOW)
                 .type(WITHDRAW)
                 .direction(OUTGOING);
     }
@@ -97,7 +97,7 @@ public class Instances {
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(50))
-                .createdDate(now())
+                .createdDate(NOW)
                 .type(DEPOSIT)
                 .direction(INCOMING);
     }

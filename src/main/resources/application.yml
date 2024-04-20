@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: java-spring-bank
+
+mybatis:
+  mapper-locations: classpath*:db/mapper/*.xml
