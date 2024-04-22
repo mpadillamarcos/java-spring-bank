@@ -24,7 +24,7 @@ public class TransactionController {
 
     private final TransactionService service;
 
-    @PostMapping("/users/{userId}/accounts/{accountId}/transfers")
+    @PostMapping("/users/{userId}/accounts/{accountId}/transfer")
     public void createTransfer(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
@@ -41,7 +41,7 @@ public class TransactionController {
         );
     }
 
-    @PostMapping("/users/{userId}/accounts/{accountId}/withdrawals")
+    @PostMapping("/users/{userId}/accounts/{accountId}/withdrawal")
     public void withdraw(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
@@ -57,7 +57,7 @@ public class TransactionController {
         );
     }
 
-    @PostMapping("/users/{userId}/accounts/{accountId}/deposits")
+    @PostMapping("/users/{userId}/accounts/{accountId}/deposit")
     public void deposit(
             @PathVariable UUID userId,
             @PathVariable UUID accountId,

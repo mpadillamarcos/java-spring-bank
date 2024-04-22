@@ -35,19 +35,19 @@ class TransactionControllerTest {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/transfers"))
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/transfer"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/transfers"))
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/transfer"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_required_body_is_null() throws Exception {
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfers")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfer")
                             .content("{}")
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -71,7 +71,7 @@ class TransactionControllerTest {
                     destinationAccountId,
                     amount.getAmount()
             );
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfers")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfer")
                             .content(requestBody)
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -102,7 +102,7 @@ class TransactionControllerTest {
             );
 
             mockMvc.perform(post(
-                            "/users/{userId}/accounts/{originAccountId}/transfers",
+                            "/users/{userId}/accounts/{originAccountId}/transfer",
                             userId.value(),
                             originAccountId.value())
                             .content(requestBody)
@@ -127,19 +127,19 @@ class TransactionControllerTest {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/withdrawals"))
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/withdrawal"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/withdrawals"))
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/withdrawal"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_required_body_is_null() throws Exception {
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/withdrawals")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/withdrawal")
                             .content("{}")
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -167,7 +167,7 @@ class TransactionControllerTest {
             );
 
             mockMvc.perform(post(
-                            "/users/{userId}/accounts/{accountId}/withdrawals",
+                            "/users/{userId}/accounts/{accountId}/withdrawal",
                             userId.value(),
                             accountId.value())
                             .content(requestBody)
@@ -190,19 +190,19 @@ class TransactionControllerTest {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/deposits"))
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/deposit"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/deposits"))
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/deposit"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_required_body_is_null() throws Exception {
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/deposits")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/deposit")
                             .content("{}")
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -230,7 +230,7 @@ class TransactionControllerTest {
             );
 
             mockMvc.perform(post(
-                            "/users/{userId}/accounts/{accountId}/deposits",
+                            "/users/{userId}/accounts/{accountId}/deposit",
                             userId.value(),
                             accountId.value())
                             .content(requestBody)
