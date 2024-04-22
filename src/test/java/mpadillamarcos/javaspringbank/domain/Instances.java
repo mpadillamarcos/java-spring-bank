@@ -1,8 +1,10 @@
 package mpadillamarcos.javaspringbank.domain;
 
 import mpadillamarcos.javaspringbank.domain.balance.Balance;
+import mpadillamarcos.javaspringbank.domain.transaction.DepositRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
-import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
+import mpadillamarcos.javaspringbank.domain.transaction.TransferRequest;
+import mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest;
 
 import static mpadillamarcos.javaspringbank.domain.access.AccessType.OWNER;
 import static mpadillamarcos.javaspringbank.domain.access.AccountAccess.AccountAccessBuilder;
@@ -41,8 +43,8 @@ public class Instances {
                 .accountId(randomAccountId());
     }
 
-    public static TransactionRequest dummyTransferRequest() {
-        return TransactionRequest.builder()
+    public static TransferRequest dummyTransferRequest() {
+        return TransferRequest.transferRequestBuilder()
                 .userId(randomUserId())
                 .originAccountId(randomAccountId())
                 .destinationAccountId(randomAccountId())
@@ -62,12 +64,12 @@ public class Instances {
                 .direction(OUTGOING);
     }
 
-    public static TransactionRequest dummyWithdrawRequest() {
-        return TransactionRequest.builder()
+    public static WithdrawRequest dummyWithdrawRequest() {
+        return WithdrawRequest.withdrawRequestBuilder()
                 .userId(randomUserId())
-                .originAccountId(randomAccountId())
+                .accountId(randomAccountId())
                 .amount(eur(50))
-                .type(WITHDRAW)
+//                .type(WITHDRAW)
                 .build();
     }
 
@@ -82,12 +84,12 @@ public class Instances {
                 .direction(OUTGOING);
     }
 
-    public static TransactionRequest dummyDepositRequest() {
-        return TransactionRequest.builder()
+    public static DepositRequest dummyDepositRequest() {
+        return DepositRequest.depositRequestBuilder()
                 .userId(randomUserId())
-                .originAccountId(randomAccountId())
+                .accountId(randomAccountId())
                 .amount(eur(50))
-                .type(DEPOSIT)
+//                .type(DEPOSIT)
                 .build();
     }
 

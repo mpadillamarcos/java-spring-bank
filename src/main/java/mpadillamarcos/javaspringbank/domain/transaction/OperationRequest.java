@@ -1,19 +1,20 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 
-@Value
+@ToString
+@EqualsAndHashCode
+@AllArgsConstructor
+@Getter
 @Builder
-public class TransactionRequest {
+public class OperationRequest {
 
-    AccountId originAccountId;
-    AccountId destinationAccountId;
-    UserId userId;
-    Money amount;
-    TransactionType type;
-    String concept;
+    private final AccountId accountId;
+    private final UserId userId;
+    private final Money amount;
+    private final String concept;
+
 }

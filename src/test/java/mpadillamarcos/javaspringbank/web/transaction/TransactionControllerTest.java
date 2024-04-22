@@ -1,7 +1,8 @@
 package mpadillamarcos.javaspringbank.web.transaction;
 
-import mpadillamarcos.javaspringbank.domain.transaction.TransactionRequest;
+import mpadillamarcos.javaspringbank.domain.transaction.DepositRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
+import mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccou
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransferRequest.transferRequestBuilder;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -108,14 +110,15 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .createTransfer(TransactionRequest.builder()
-                            .userId(userId)
-                            .originAccountId(originAccountId)
-                            .destinationAccountId(destinationAccountId)
+                    .createTransfer(transferRequestBuilder()
                             .amount(amount)
+                            .destinationAccountId(destinationAccountId)
+                            .originAccountId(originAccountId)
+                            .userId(userId)
                             .type(TRANSFER)
                             .concept(concept)
-                            .build());
+                            .build()
+                    );
         }
     }
 
@@ -172,9 +175,9 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .withdraw(TransactionRequest.builder()
+                    .withdraw(WithdrawRequest.withdrawRequestBuilder()
                             .userId(userId)
-                            .originAccountId(accountId)
+                            .accountId(accountId)
                             .amount(amount)
                             .type(WITHDRAW)
                             .concept(concept)
@@ -235,9 +238,9 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .deposit(TransactionRequest.builder()
+                    .deposit(DepositRequest.depositRequestBuilder()
                             .userId(userId)
-                            .originAccountId(accountId)
+                            .accountId(accountId)
                             .amount(amount)
                             .type(DEPOSIT)
                             .concept(concept)

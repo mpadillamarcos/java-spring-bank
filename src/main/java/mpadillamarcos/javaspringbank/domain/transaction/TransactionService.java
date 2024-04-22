@@ -31,81 +31,81 @@ public class TransactionService {
     private final BalanceService balanceService;
     private final Clock clock;
 
-    public void createTransfer(TransactionRequest transactionRequest) {
-        var userId = transactionRequest.getUserId();
-        var originAccountId = transactionRequest.getOriginAccountId();
-        var destinationAccountId = transactionRequest.getDestinationAccountId();
+    public void createTransfer(TransferRequest transferRequest) {
+        var userId = transferRequest.getUserId();
+        var originAccountId = transferRequest.getAccountId();
+        var destinationAccountId = transferRequest.getDestinationAccountId();
         var groupId = randomTransactionGroupId();
 
         checkOriginAccount(originAccountId, userId);
         checkDestinationAccount(destinationAccountId);
-        updateOriginAccountBalance(originAccountId, transactionRequest.getAmount());
+        updateOriginAccountBalance(originAccountId, transferRequest.getAmount());
 
         var outgoingTransaction = newTransaction()
                 .groupId(groupId)
                 .userId(userId)
                 .accountId(originAccountId)
-                .amount(transactionRequest.getAmount())
+                .amount(transferRequest.getAmount())
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(OUTGOING)
-                .concept(transactionRequest.getConcept())
+                .concept(transferRequest.getConcept())
                 .build();
 
         var incomingTransaction = newTransaction()
                 .groupId(groupId)
                 .userId(userId)
                 .accountId(destinationAccountId)
-                .amount(transactionRequest.getAmount())
+                .amount(transferRequest.getAmount())
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(INCOMING)
-                .concept(transactionRequest.getConcept())
+                .concept(transferRequest.getConcept())
                 .build();
 
         repository.insert(outgoingTransaction);
         repository.insert(incomingTransaction);
     }
 
-    public void withdraw(TransactionRequest transactionRequest) {
-        var userId = transactionRequest.getUserId();
-        var accountId = transactionRequest.getOriginAccountId();
+    public void withdraw(WithdrawRequest withdrawRequest) {
+        var userId = withdrawRequest.getUserId();
+        var accountId = withdrawRequest.getAccountId();
 
         checkOriginAccount(accountId, userId);
-        updateOriginAccountBalance(accountId, transactionRequest.getAmount());
+        updateOriginAccountBalance(accountId, withdrawRequest.getAmount());
 
         var withdrawTransaction = newTransaction()
                 .groupId(randomTransactionGroupId())
                 .userId(userId)
                 .accountId(accountId)
-                .amount(transactionRequest.getAmount())
+                .amount(withdrawRequest.getAmount())
                 .createdDate(clock.now())
                 .type(WITHDRAW)
                 .state(CONFIRMED)
                 .direction(OUTGOING)
-                .concept(transactionRequest.getConcept())
+                .concept(withdrawRequest.getConcept())
                 .build();
 
         repository.insert(withdrawTransaction);
     }
 
-    public void deposit(TransactionRequest transactionRequest) {
-        var userId = transactionRequest.getUserId();
-        var accountId = transactionRequest.getOriginAccountId();
+    public void deposit(DepositRequest depositRequest) {
+        var userId = depositRequest.getUserId();
+        var accountId = depositRequest.getAccountId();
 
         checkOriginAccount(accountId, userId);
-        balanceService.deposit(accountId, transactionRequest.getAmount());
+        balanceService.deposit(accountId, depositRequest.getAmount());
 
         var depositTransaction = newTransaction()
                 .groupId(randomTransactionGroupId())
                 .userId(userId)
                 .accountId(accountId)
-                .amount(transactionRequest.getAmount())
+                .amount(depositRequest.getAmount())
                 .createdDate(clock.now())
                 .type(DEPOSIT)
                 .state(CONFIRMED)
                 .direction(INCOMING)
-                .concept(transactionRequest.getConcept())
+                .concept(depositRequest.getConcept())
                 .build();
 
         repository.insert(depositTransaction);
