@@ -21,4 +21,19 @@
         FROM accounts
         WHERE id = #{value}
     </select>
+
+    <update id="update">
+        UPDATE accounts
+        SET state = #{state}
+        WHERE id = #{id.value}
+    </update>
+
+    <select id="getAccounts">
+        SELECT id, user_id, created_date, state
+        FROM accounts
+        WHERE id IN
+        <foreach item="accountId" collection="collection" open="(" separator="," close=")">
+            #{accountId}
+        </foreach>
+    </select>
 </mapper>
