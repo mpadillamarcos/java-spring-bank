@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import static java.math.BigDecimal.ZERO;
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
@@ -47,6 +48,11 @@ public class Money {
 
     public Boolean isLessThan(Money amount) {
         return this.amount.compareTo(amount.getAmount()) == -1;
+    }
+
+    public String toStringWithCurrency() {
+        var amount = this.amount.setScale(2, RoundingMode.HALF_UP);
+        return amount.toString().concat(" ").concat(this.currency.getSymbol());
     }
 
     private void checkCurrency(Money amount) {

@@ -112,5 +112,10 @@ class MoneyTest {
         }
     }
 
+    @Test
+    void returns_a_string_with_the_amount_and_the_currency_symbol() {
+        var money = Money.eur(160.3654);
 
+        assertThat(money.toStringWithCurrency()).isEqualTo("160.37 €");
+    }
 }
