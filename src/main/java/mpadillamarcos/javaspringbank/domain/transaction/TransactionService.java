@@ -8,19 +8,19 @@ import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.AccessDeniedException;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.exception.TransactionNotAllowedException;
-import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
+import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 
@@ -40,9 +40,11 @@ public class TransactionService {
         var destinationAccountId = transferRequest.getDestinationAccountId();
         var groupId = randomTransactionGroupId();
 
-        checkOriginAccount(originAccountId, userId);
-        checkDestinationAccount(destinationAccountId);
-        updateOriginAccountBalance(originAccountId, transferRequest.getAmount());
+        canOperate(originAccountId, userId);
+
+        exists(destinationAccountId);
+
+        balanceService.withdraw(originAccountId, transferRequest.getAmount());
 
         var outgoingTransaction = newTransaction()
                 .groupId(groupId)
@@ -74,8 +76,9 @@ public class TransactionService {
         var userId = withdrawRequest.getUserId();
         var accountId = withdrawRequest.getAccountId();
 
-        checkOriginAccount(accountId, userId);
-        updateOriginAccountBalance(accountId, withdrawRequest.getAmount());
+        canOperate(accountId, userId);
+
+        balanceService.withdraw(accountId, withdrawRequest.getAmount());
 
         var withdrawTransaction = newTransaction()
                 .groupId(randomTransactionGroupId())
@@ -84,7 +87,6 @@ public class TransactionService {
                 .amount(withdrawRequest.getAmount())
                 .createdDate(clock.now())
                 .type(WITHDRAW)
-                .state(CONFIRMED)
                 .direction(OUTGOING)
                 .concept(withdrawRequest.getConcept())
                 .build();
@@ -96,7 +98,8 @@ public class TransactionService {
         var userId = depositRequest.getUserId();
         var accountId = depositRequest.getAccountId();
 
-        checkOriginAccount(accountId, userId);
+        canOperate(accountId, userId);
+
         balanceService.deposit(accountId, depositRequest.getAmount());
 
         var depositTransaction = newTransaction()
@@ -106,7 +109,6 @@ public class TransactionService {
                 .amount(depositRequest.getAmount())
                 .createdDate(clock.now())
                 .type(DEPOSIT)
-                .state(CONFIRMED)
                 .direction(INCOMING)
                 .concept(depositRequest.getConcept())
                 .build();
@@ -116,7 +118,7 @@ public class TransactionService {
 
     public void confirmTransaction(TransactionId transactionId) {
         var transaction = repository.findTransactionById(transactionId)
-                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId + " not found"));
+                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
 
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
 
@@ -140,11 +142,11 @@ public class TransactionService {
     private void checkTransactions(List<Transaction> transactions) {
         for (Transaction transaction : transactions) {
             if (transaction.getState() != PENDING) {
-                throw new IllegalStateException("Transaction with ID " + transaction.getId() + " is " + transaction.getState());
+                throw new IllegalStateException("Transaction with ID " + transaction.getId().value() + " is " + transaction.getState());
             }
             var accountId = transaction.getAccountId();
             var account = accountService.findById(accountId)
-                    .orElseThrow(() -> new NotFoundException("Account with ID " + accountId + " was not found"));
+                    .orElseThrow(() -> new NotFoundException("Account with ID " + accountId.value() + " was not found"));
             if (account.getState() != OPEN) {
                 throw new IllegalStateException("Account with ID " + accountId + " is not open");
             }
@@ -152,29 +154,23 @@ public class TransactionService {
         }
     }
 
-    private void checkOriginAccount(AccountId originAccountId, UserId userId) {
-        var access = accessService.findAccountAccess(originAccountId, userId)
-                .orElseThrow(() -> new AccessDeniedException("User " + userId.value() + " has no access to that account"));
-        if (!access.canOperate()) {
-            throw new AccessDeniedException("User " + userId.value() + " has no access to that account");
-        }
-        var account = accountService.getById(originAccountId);
-        if (account.getState() != OPEN) {
-            throw new TransactionNotAllowedException("Origin account is " + account.getState());
+    private void canOperate(AccountId accountId, UserId userId) {
+        exists(accountId);
+
+        var access = accessService.findAccountAccess(accountId, userId)
+                .orElseThrow(() -> new AccessDeniedException("User with ID " + userId.value() + " has no access to that account"));
+
+        if (access.getState().equals(REVOKED) || access.getType().equals(VIEWER)) {
+            throw new AccessDeniedException("User with ID " + userId.value() + " has no operation permits");
         }
     }
 
-    private void checkDestinationAccount(AccountId accountId) {
+    private void exists(AccountId accountId) {
         var account = accountService.findById(accountId)
-                .orElseThrow(() -> new NotFoundException("Account " + accountId.value() + " does not exist"));
+                .orElseThrow(() -> new NotFoundException("Account with ID " + accountId.value() + " does not exist"));
 
         if (account.getState() != OPEN) {
-            throw new TransactionNotAllowedException("The destination account is " + account.getState());
+            throw new TransactionNotAllowedException("The account with ID " + accountId.value() + " is " + account.getState());
         }
     }
-
-    private void updateOriginAccountBalance(AccountId originAccountId, Money amount) {
-        balanceService.withdraw(originAccountId, amount);
-    }
-
 }
