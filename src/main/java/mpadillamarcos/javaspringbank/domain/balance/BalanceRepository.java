@@ -12,4 +12,6 @@ public interface BalanceRepository {
     Balance getBalance(AccountId accountId);
 
     List<Balance> getBalances(Set<AccountId> accountIds);
+
+    void update(Balance updatedBalance);
 }

@@ -3,6 +3,7 @@ package mpadillamarcos.javaspringbank.domain.balance;
 import lombok.Builder;
 import lombok.Value;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
+import mpadillamarcos.javaspringbank.domain.exception.InsufficientBalanceException;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
@@ -25,4 +26,23 @@ public class Balance {
         return builder()
                 .amount(zero(EUR));
     }
+
+    public Balance withdraw(Money amount) {
+        if (this.amount.isLessThan(amount)) {
+            throw new InsufficientBalanceException(
+                    "The amount to withdraw (" + amount.getAmount() + ") exceeds the current balance " + this.amount
+            );
+        }
+
+        return toBuilder()
+                .amount(this.amount.subtract(amount))
+                .build();
+    }
+
+    public Balance deposit(Money amount) {
+        return toBuilder()
+                .amount(this.amount.add(amount))
+                .build();
+    }
+
 }

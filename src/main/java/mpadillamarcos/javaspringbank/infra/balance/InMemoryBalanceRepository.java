@@ -30,4 +30,9 @@ public class InMemoryBalanceRepository implements BalanceRepository {
         }
         return balancesList;
     }
+
+    @Override
+    public void update(Balance updatedBalance) {
+        balances.put(updatedBalance.getAccountId(), updatedBalance);
+    }
 }
