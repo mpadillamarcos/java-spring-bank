@@ -110,7 +110,7 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .createTransfer(transferRequestBuilder()
+                    .transfer(transferRequestBuilder()
                             .amount(amount)
                             .destinationAccountId(destinationAccountId)
                             .originAccountId(originAccountId)

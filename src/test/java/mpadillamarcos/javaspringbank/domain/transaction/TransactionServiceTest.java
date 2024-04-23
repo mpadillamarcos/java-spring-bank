@@ -47,7 +47,7 @@ class TransactionServiceTest {
     );
 
     @Nested
-    class CreateTransfer {
+    class Transfer {
 
         @Test
         void throws_not_found_when_origin_account_does_not_exist() {
@@ -57,7 +57,7 @@ class TransactionServiceTest {
             when(accountService.findById(originAccountId))
                     .thenReturn(empty());
 
-            assertThrows(NotFoundException.class, () -> service.createTransfer(request));
+            assertThrows(NotFoundException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -70,7 +70,7 @@ class TransactionServiceTest {
             when(accountService.findById(originAccountId))
                     .thenReturn(Optional.of(originAccount));
 
-            assertThrows(TransactionNotAllowedException.class, () -> service.createTransfer(request));
+            assertThrows(TransactionNotAllowedException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -85,7 +85,7 @@ class TransactionServiceTest {
             when(accessService.findAccountAccess(originAccountId, userId))
                     .thenReturn(empty());
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
+            assertThrows(AccessDeniedException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -101,7 +101,7 @@ class TransactionServiceTest {
             when(accessService.findAccountAccess(originAccountId, userId))
                     .thenReturn(Optional.of(access));
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
+            assertThrows(AccessDeniedException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -117,7 +117,7 @@ class TransactionServiceTest {
             when(accessService.findAccountAccess(originAccountId, userId))
                     .thenReturn(Optional.of(access));
 
-            assertThrows(AccessDeniedException.class, () -> service.createTransfer(request));
+            assertThrows(AccessDeniedException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -136,7 +136,7 @@ class TransactionServiceTest {
             when(accountService.findById(destinationAccountId))
                     .thenReturn(empty());
 
-            assertThrows(NotFoundException.class, () -> service.createTransfer(request));
+            assertThrows(NotFoundException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -156,7 +156,7 @@ class TransactionServiceTest {
             when(accountService.findById(destinationAccountId))
                     .thenReturn(Optional.of(destinationAccount));
 
-            assertThrows(TransactionNotAllowedException.class, () -> service.createTransfer(request));
+            assertThrows(TransactionNotAllowedException.class, () -> service.transfer(request));
         }
 
         @Test
@@ -176,7 +176,7 @@ class TransactionServiceTest {
             when(accountService.findById(destinationAccountId))
                     .thenReturn(Optional.of(destinationAccount));
 
-            service.createTransfer(request);
+            service.transfer(request);
 
             verify(balanceService, times(1))
                     .withdraw(originAccountId, request.getAmount());
@@ -204,7 +204,7 @@ class TransactionServiceTest {
             when(accountService.findById(destinationAccountId))
                     .thenReturn(Optional.of(destinationAccount));
 
-            service.createTransfer(request);
+            service.transfer(request);
 
             assertThat(repository.findLastTransactionByAccountId(originAccountId))
                     .get()
@@ -241,7 +241,7 @@ class TransactionServiceTest {
             when(accountService.findById(destinationAccountId))
                     .thenReturn(Optional.of(destinationAccount));
 
-            service.createTransfer(request);
+            service.transfer(request);
 
             assertThat(repository.findLastTransactionByAccountId(destinationAccountId))
                     .get()

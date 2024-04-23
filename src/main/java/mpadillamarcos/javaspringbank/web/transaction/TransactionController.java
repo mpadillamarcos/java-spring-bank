@@ -29,7 +29,7 @@ public class TransactionController {
             @PathVariable UUID userId,
             @PathVariable UUID accountId,
             @Valid @RequestBody CreateTransferRequest request) {
-        service.createTransfer(
+        service.transfer(
                 TransferRequest.transferRequestBuilder()
                         .amount(request.getAmount())
                         .destinationAccountId(accountId(request.getDestinationAccountId()))

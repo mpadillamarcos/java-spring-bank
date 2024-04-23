@@ -34,7 +34,7 @@ public class TransactionService {
     private final BalanceService balanceService;
     private final Clock clock;
 
-    public void createTransfer(TransferRequest transferRequest) {
+    public void transfer(TransferRequest transferRequest) {
         var userId = transferRequest.getUserId();
         var originAccountId = transferRequest.getAccountId();
         var destinationAccountId = transferRequest.getDestinationAccountId();
