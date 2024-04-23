@@ -9,8 +9,10 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import java.time.Instant;
 
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
+import static mpadillamarcos.javaspringbank.utils.Checks.requireState;
 
 @Builder(toBuilder = true)
 @Value
@@ -57,4 +59,15 @@ public class Transaction {
                 .state(PENDING);
     }
 
+    public Transaction confirm() {
+        if (state == CONFIRMED) {
+            return this;
+        }
+
+        requireState(state, PENDING);
+
+        return toBuilder()
+                .state(CONFIRMED)
+                .build();
+    }
 }

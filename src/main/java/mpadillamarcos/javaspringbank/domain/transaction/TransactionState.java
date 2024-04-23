@@ -1,5 +1,5 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
 public enum TransactionState {
-    PENDING, CONFIRMED, REJECTED, REVERTED
+    PENDING, CONFIRMED, DECLINED, REJECTED, REVERTED
 }

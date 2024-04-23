@@ -1,6 +1,7 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
 import mpadillamarcos.javaspringbank.domain.money.Money;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -15,7 +16,7 @@ import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTr
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.*;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,37 @@ class TransactionTest {
                 .returns(state, Transaction::getState)
                 .returns(direction, Transaction::getDirection)
                 .returns(type, Transaction::getType);
+    }
+
+    @Nested
+    class Confirm {
+
+        @Test
+        void sets_state_to_confirmed_when_confirming_a_pending_transaction() {
+            var transaction = dummyTransfer().build();
+
+            var confirmedTransaction = transaction.confirm();
+
+            assertThat(confirmedTransaction.getState()).isEqualTo(CONFIRMED);
+        }
+
+        @Test
+        void throws_exception_when_confirming_a_declined_transaction() {
+            var transaction = dummyTransfer().state(DECLINED).build();
+
+            var exception = assertThrows(IllegalStateException.class, transaction::confirm);
+
+            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was DECLINED");
+        }
+
+        @Test
+        void does_nothing_when_confirming_a_confirmed_account() {
+            var transaction = dummyTransfer().state(CONFIRMED).build();
+
+            var confirmedTransaction = transaction.confirm();
+
+            assertThat(confirmedTransaction).isSameAs(transaction);
+        }
     }
 
     static List<Arguments> transactionsWithMissingData() {

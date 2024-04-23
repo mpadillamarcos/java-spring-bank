@@ -13,12 +13,15 @@ import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 
 @Service
@@ -115,9 +118,38 @@ public class TransactionService {
         var transaction = repository.findTransactionById(transactionId)
                 .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId + " not found"));
 
-        balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
+        List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
 
-        repository.updateState(transaction.getId(), CONFIRMED);
+        checkTransactions(transactions);
+
+        operateTransactions(transactions);
+    }
+
+    private void operateTransactions(List<Transaction> transactions) {
+        for (Transaction transaction : transactions) {
+            if (transaction.getDirection().equals(INCOMING)) {
+                balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
+            }
+            if (transaction.getDirection().equals(OUTGOING) && !transaction.getType().equals(TRANSFER)) {
+                balanceService.withdraw(transaction.getAccountId(), transaction.getAmount());
+            }
+            repository.update(transaction.confirm());
+        }
+    }
+
+    private void checkTransactions(List<Transaction> transactions) {
+        for (Transaction transaction : transactions) {
+            if (transaction.getState() != PENDING) {
+                throw new IllegalStateException("Transaction with ID " + transaction.getId() + " is " + transaction.getState());
+            }
+            var accountId = transaction.getAccountId();
+            var account = accountService.findById(accountId)
+                    .orElseThrow(() -> new NotFoundException("Account with ID " + accountId + " was not found"));
+            if (account.getState() != OPEN) {
+                throw new IllegalStateException("Account with ID " + accountId + " is not open");
+            }
+
+        }
     }
 
     private void checkOriginAccount(AccountId originAccountId, UserId userId) {
@@ -132,11 +164,10 @@ public class TransactionService {
         }
     }
 
-    private void checkDestinationAccount(AccountId destinationAccountId) {
-        if (!accountService.exists(destinationAccountId)) {
-            throw new NotFoundException("Account " + destinationAccountId.value() + " does not exist");
-        }
-        var account = accountService.getById(destinationAccountId);
+    private void checkDestinationAccount(AccountId accountId) {
+        var account = accountService.findById(accountId)
+                .orElseThrow(() -> new NotFoundException("Account " + accountId.value() + " does not exist"));
+
         if (account.getState() != OPEN) {
             throw new TransactionNotAllowedException("The destination account is " + account.getState());
         }

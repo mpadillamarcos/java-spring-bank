@@ -64,6 +64,10 @@ public class AccountService {
         return Optional.of(new AccountView(account, access, balance));
     }
 
+    public Optional<Account> findById(AccountId accountId) {
+        return repository.findById(accountId);
+    }
+
     public Boolean exists(AccountId accountId) {
         var account = repository.findById(accountId);
         return account.isPresent();

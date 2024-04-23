@@ -2,9 +2,9 @@ package mpadillamarcos.javaspringbank.infra.transaction;
 
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
+import mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionId;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionRepository;
-import mpadillamarcos.javaspringbank.domain.transaction.TransactionState;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -15,6 +15,7 @@ import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.tra
 public class InMemoryTransactionRepository implements TransactionRepository {
 
     private final Map<TransactionId, Transaction> transactions = new HashMap<>();
+    private final Map<TransactionGroupId, List<TransactionId>> groupIdTransactionId = new HashMap<>();
     private final Stack<UUID[]> accountIdTransactionIdPairs = new Stack<>();
 
     @Override
@@ -22,6 +23,17 @@ public class InMemoryTransactionRepository implements TransactionRepository {
         transactions.put(transaction.getId(), transaction);
         UUID[] pair = new UUID[]{transaction.getAccountId().value(), transaction.getId().value()};
         accountIdTransactionIdPairs.add(pair);
+
+        var groupId = transaction.getGroupId();
+        List<TransactionId> transactionIds = groupIdTransactionId.get(groupId);
+        if (transactionIds == null) {
+            List<TransactionId> newTransactionIds = new ArrayList<>();
+            newTransactionIds.add(transaction.getId());
+            groupIdTransactionId.put(groupId, newTransactionIds);
+        } else {
+            transactionIds.add(transaction.getId());
+            groupIdTransactionId.put(groupId, transactionIds);
+        }
     }
 
     @Override
@@ -37,31 +49,18 @@ public class InMemoryTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public void updateState(TransactionId transactionId, TransactionState state) {
-        var groupId = transactions.get(transactionId).getGroupId();
+    public void update(Transaction transaction) {
+        transactions.put(transaction.getId(), transaction);
+    }
 
-        int counter = 0;
-        for (Transaction transaction : transactions.values()) {
-            if (counter == 2) {
-                break;
-            }
-            if (transaction.getGroupId().equals(groupId)) {
-                var newTransaction = new Transaction(
-                        transaction.getId(),
-                        transaction.getGroupId(),
-                        transaction.getUserId(),
-                        transaction.getAccountId(),
-                        transaction.getAmount(),
-                        transaction.getCreatedDate(),
-                        state,
-                        transaction.getDirection(),
-                        transaction.getType(),
-                        transaction.getConcept()
-                );
-                transactions.replace(newTransaction.getId(), newTransaction);
-                counter++;
-            }
+    @Override
+    public List<Transaction> findTransactionsByGroupId(TransactionGroupId groupId) {
+        List<TransactionId> transactionIds = groupIdTransactionId.get(groupId);
+        List<Transaction> transactionsByGroupId = new ArrayList<>();
+        for (TransactionId transactionId : transactionIds) {
+            transactionsByGroupId.add(transactions.get(transactionId));
         }
+        return transactionsByGroupId;
     }
 
     public Optional<Transaction> findTransactionById(TransactionId transactionId) {

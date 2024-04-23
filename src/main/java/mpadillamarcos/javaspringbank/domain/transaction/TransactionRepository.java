@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.domain.transaction;
 
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository {
@@ -12,5 +13,7 @@ public interface TransactionRepository {
 
     Optional<Transaction> findLastTransactionByAccountId(AccountId accountId);
 
-    void updateState(TransactionId id, TransactionState state);
+    void update(Transaction transaction);
+
+    List<Transaction> findTransactionsByGroupId(TransactionGroupId groupId);
 }
