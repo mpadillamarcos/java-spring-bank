@@ -470,7 +470,7 @@ class TransactionServiceTest {
     }
 
     @Nested
-    class ConfirmTransaction {
+    class Confirm {
 
         @Test
         void throws_not_found_exception_when_transaction_id_does_not_exist() {
@@ -627,6 +627,93 @@ class TransactionServiceTest {
                     .returns(TRANSFER, Transaction::getType)
                     .returns(OUTGOING, Transaction::getDirection)
                     .returns(transaction1.getConcept(), Transaction::getConcept);
+        }
+    }
+
+    @Nested
+    class Reject {
+
+        @Test
+        void throws_not_found_exception_when_transaction_id_does_not_exist() {
+            var transactionId = randomTransactionId();
+
+            assertThrows(NotFoundException.class, () -> service.reject(transactionId));
+        }
+
+        @Test
+        void throws_exception_when_account_state_is_not_open() {
+            var transaction = dummyWithdraw().build();
+            var accountId = transaction.getAccountId();
+            var account = dummyAccount().id(accountId).state(BLOCKED).build();
+            repository.insert(transaction);
+
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
+
+            assertThrows(IllegalStateException.class, () -> service.reject(transaction.getId()));
+        }
+
+        @Test
+        void throws_exception_when_transaction_state_is_not_pending() {
+            var transaction = dummyWithdraw().state(CONFIRMED).build();
+            var accountId = transaction.getAccountId();
+            var account = dummyAccount().id(accountId).build();
+            repository.insert(transaction);
+
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
+
+            assertThrows(IllegalStateException.class, () -> service.reject(transaction.getId()));
+        }
+
+        @Test
+        void updates_account_balance_in_outgoing_transfer() {
+            var groupId = randomTransactionGroupId();
+            var transaction1 = dummyTransfer().groupId(groupId).build();
+            var accountId1 = transaction1.getAccountId();
+            var account1 = dummyAccount().id(accountId1).build();
+            var transaction2 = dummyTransfer().direction(INCOMING).groupId(groupId).build();
+            var accountId2 = transaction2.getAccountId();
+            var account2 = dummyAccount().id(accountId2).build();
+            repository.insert(transaction1);
+            repository.insert(transaction2);
+
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
+
+            service.reject(transaction1.getId());
+
+            verify(balanceService, times(1))
+                    .deposit(accountId1, transaction1.getAmount());
+        }
+
+        @Test
+        void updates_transaction_to_rejected() {
+            var groupId = randomTransactionGroupId();
+            var transaction1 = dummyTransfer().groupId(groupId).build();
+            var accountId1 = transaction1.getAccountId();
+            var account1 = dummyAccount().id(accountId1).build();
+            var transaction2 = dummyTransfer().direction(INCOMING).groupId(groupId).build();
+            var accountId2 = transaction2.getAccountId();
+            var account2 = dummyAccount().id(accountId2).build();
+            repository.insert(transaction1);
+            repository.insert(transaction2);
+
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
+
+            service.reject(transaction1.getId());
+
+            assertThat(repository.findTransactionById(transaction1.getId()))
+                    .get()
+                    .returns(REJECTED, Transaction::getState);
+            assertThat(repository.findTransactionById(transaction2.getId()))
+                    .get()
+                    .returns(REJECTED, Transaction::getState);
         }
     }
 

@@ -122,6 +122,17 @@ public class TransactionService {
         transactions.forEach(this::confirm);
     }
 
+    public void reject(TransactionId transactionId) {
+        var transaction = repository.findTransactionById(transactionId)
+                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
+
+        List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
+
+        transactions.forEach(this::isAccountOpen);
+
+        transactions.forEach(this::reject);
+    }
+
     private void confirm(Transaction transaction) {
         repository.update(transaction.confirm());
         if (transaction.is(INCOMING)) {
@@ -129,6 +140,13 @@ public class TransactionService {
         }
         if (transaction.is(OUTGOING) && !transaction.is(TRANSFER)) {
             balanceService.withdraw(transaction.getAccountId(), transaction.getAmount());
+        }
+    }
+
+    private void reject(Transaction transaction) {
+        repository.update(transaction.reject());
+        if (transaction.is(OUTGOING) && transaction.is(TRANSFER)) {
+            balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
         }
     }
 

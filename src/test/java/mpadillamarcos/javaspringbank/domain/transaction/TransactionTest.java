@@ -111,7 +111,16 @@ class TransactionTest {
 
             var exception = assertThrows(IllegalStateException.class, transaction::reject);
 
-            assertThat(exception).hasMessage("expected state to be one of [PENDING, CONFIRMED] but was REJECTED");
+            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was REJECTED");
+        }
+
+        @Test
+        void throws_exception_when_rejecting_a_confirmed_transaction() {
+            var transaction = dummyTransfer().state(CONFIRMED).build();
+
+            var exception = assertThrows(IllegalStateException.class, transaction::reject);
+
+            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was CONFIRMED");
         }
 
         @Test
@@ -122,16 +131,6 @@ class TransactionTest {
 
             assertThat(rejectedTransaction.getState()).isEqualTo(REJECTED);
         }
-
-        @Test
-        void sets_state_to_rejected_when_rejecting_a_confirmed_transaction() {
-            var transaction = dummyTransfer().state(CONFIRMED).build();
-
-            var rejectedTransaction = transaction.reject();
-
-            assertThat(rejectedTransaction.getState()).isEqualTo(REJECTED);
-        }
-
     }
 
     @Nested

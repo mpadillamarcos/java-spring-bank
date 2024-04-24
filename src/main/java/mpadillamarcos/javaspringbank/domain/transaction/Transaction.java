@@ -67,7 +67,7 @@ public class Transaction {
     }
 
     public Transaction reject() {
-        requireState(state, PENDING, CONFIRMED);
+        requireState(state, PENDING);
 
         return toBuilder()
                 .state(REJECTED)
