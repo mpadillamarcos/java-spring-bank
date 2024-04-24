@@ -10,13 +10,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.time.Instant;
 import java.util.List;
 
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyDeposit;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyTransfer;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.*;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.DEPOSIT;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.TRANSFER;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,23 +84,88 @@ class TransactionTest {
         }
 
         @Test
-        void throws_exception_when_confirming_a_declined_transaction() {
-            var transaction = dummyTransfer().state(DECLINED).build();
+        void throws_exception_when_confirming_a_rejected_transaction() {
+            var transaction = dummyTransfer().state(REJECTED).build();
 
             var exception = assertThrows(IllegalStateException.class, transaction::confirm);
 
-            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was DECLINED");
+            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was REJECTED");
         }
 
         @Test
-        void does_nothing_when_confirming_a_confirmed_account() {
+        void throws_exception_when_confirming_a_confirmed_account() {
             var transaction = dummyTransfer().state(CONFIRMED).build();
 
-            var confirmedTransaction = transaction.confirm();
+            var exception = assertThrows(IllegalStateException.class, transaction::confirm);
 
-            assertThat(confirmedTransaction).isSameAs(transaction);
+            assertThat(exception).hasMessage("expected state to be one of [PENDING] but was CONFIRMED");
         }
     }
+
+    @Nested
+    class Reject {
+
+        @Test
+        void throws_exception_when_rejecting_a_rejected_transaction() {
+            var transaction = dummyTransfer().state(REJECTED).build();
+
+            var exception = assertThrows(IllegalStateException.class, transaction::reject);
+
+            assertThat(exception).hasMessage("expected state to be one of [PENDING, CONFIRMED] but was REJECTED");
+        }
+
+        @Test
+        void sets_state_to_rejected_when_rejecting_a_pending_transaction() {
+            var transaction = dummyTransfer().build();
+
+            var rejectedTransaction = transaction.reject();
+
+            assertThat(rejectedTransaction.getState()).isEqualTo(REJECTED);
+        }
+
+        @Test
+        void sets_state_to_rejected_when_rejecting_a_confirmed_transaction() {
+            var transaction = dummyTransfer().state(CONFIRMED).build();
+
+            var rejectedTransaction = transaction.reject();
+
+            assertThat(rejectedTransaction.getState()).isEqualTo(REJECTED);
+        }
+
+    }
+
+    @Nested
+    class Is {
+
+        @Test
+        void returns_true_when_direction_is_the_same() {
+            var transaction = dummyDeposit().build();
+
+            assertThat(transaction.is(INCOMING)).isTrue();
+        }
+
+        @Test
+        void returns_false_when_direction_is_not_the_same() {
+            var transaction = dummyDeposit().build();
+
+            assertThat(transaction.is(OUTGOING)).isFalse();
+        }
+
+        @Test
+        void returns_true_when_type_is_the_same() {
+            var transaction = dummyDeposit().build();
+
+            assertThat(transaction.is(DEPOSIT)).isTrue();
+        }
+
+        @Test
+        void returns_false_when_type_is_not_the_same() {
+            var transaction = dummyDeposit().build();
+
+            assertThat(transaction.is(TRANSFER)).isFalse();
+        }
+    }
+
 
     static List<Arguments> transactionsWithMissingData() {
         return List.of(

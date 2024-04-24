@@ -129,6 +129,15 @@ class AccountTest {
         assertThat(closed).isSameAs(account);
     }
 
+    @Test
+    void throws_exception_when_account_is_not_open() {
+        var account = dummyAccount().state(BLOCKED).build();
+
+        var exception = assertThrows(IllegalStateException.class, account::isOpen);
+
+        assertThat(exception).hasMessage("expected state to be one of [OPEN] but was BLOCKED");
+    }
+
     static List<Arguments> accountsWithMissingData() {
         return List.of(
                 Arguments.arguments("id", dummyAccount().id(null)),

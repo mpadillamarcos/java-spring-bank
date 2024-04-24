@@ -14,7 +14,6 @@ import mpadillamarcos.javaspringbank.infra.transaction.InMemoryTransactionReposi
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Optional;
 
 import static java.util.Optional.empty;
@@ -29,7 +28,7 @@ import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirect
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.DECLINED;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.REJECTED;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -477,78 +476,33 @@ class TransactionServiceTest {
         void throws_not_found_exception_when_transaction_id_does_not_exist() {
             var transactionId = randomTransactionId();
 
-            assertThrows(NotFoundException.class, () -> service.confirmTransaction(transactionId));
-        }
-
-        @Test
-        void gets_multiple_transactions_by_group_id() {
-            var groupId = randomTransactionGroupId();
-            var transaction1 = dummyTransfer().groupId(groupId).build();
-            var transaction2 = dummyTransfer().direction(INCOMING).groupId(groupId).build();
-            repository.insert(transaction1);
-            repository.insert(transaction2);
-
-            assertThat(repository.findTransactionsByGroupId(groupId))
-                    .isEqualTo(List.of(transaction1, transaction2));
-        }
-
-        @Test
-        void throws_exception_when_transaction_state_is_not_pending() {
-            var groupId = randomTransactionGroupId();
-            var transaction1 = dummyTransfer().groupId(groupId).build();
-            var accountId1 = transaction1.getAccountId();
-            var account1 = dummyAccount().id(accountId1).build();
-            var transaction2 = dummyTransfer().direction(INCOMING).state(DECLINED).groupId(groupId).build();
-            var accountId2 = transaction2.getAccountId();
-            var account2 = dummyAccount().id(accountId2).build();
-            repository.insert(transaction1);
-            repository.insert(transaction2);
-
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
-
-            assertThrows(IllegalStateException.class, () -> service.confirmTransaction(transaction1.getId()));
-        }
-
-        @Test
-        void throws_exception_when_account_does_not_exist() {
-            var groupId = randomTransactionGroupId();
-            var transaction1 = dummyTransfer().groupId(groupId).build();
-            var accountId1 = transaction1.getAccountId();
-            var account1 = dummyAccount().id(accountId1).build();
-            var transaction2 = dummyTransfer().direction(INCOMING).groupId(groupId).build();
-            var accountId2 = transaction2.getAccountId();
-            repository.insert(transaction1);
-            repository.insert(transaction2);
-
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(empty());
-
-            assertThrows(NotFoundException.class, () -> service.confirmTransaction(transaction1.getId()));
+            assertThrows(NotFoundException.class, () -> service.confirm(transactionId));
         }
 
         @Test
         void throws_exception_when_account_state_is_not_open() {
-            var groupId = randomTransactionGroupId();
-            var transaction1 = dummyTransfer().groupId(groupId).build();
-            var accountId1 = transaction1.getAccountId();
-            var account1 = dummyAccount().id(accountId1).build();
-            var transaction2 = dummyTransfer().direction(INCOMING).groupId(groupId).build();
-            var accountId2 = transaction2.getAccountId();
-            var account2 = dummyAccount().id(accountId2).state(CLOSED).build();
-            repository.insert(transaction1);
-            repository.insert(transaction2);
+            var transaction = dummyWithdraw().build();
+            var accountId = transaction.getAccountId();
+            var account = dummyAccount().id(accountId).state(BLOCKED).build();
+            repository.insert(transaction);
 
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
 
-            assertThrows(IllegalStateException.class, () -> service.confirmTransaction(transaction1.getId()));
+            assertThrows(IllegalStateException.class, () -> service.confirm(transaction.getId()));
+        }
+
+        @Test
+        void throws_exception_when_transaction_state_is_not_pending() {
+            var transaction = dummyWithdraw().state(REJECTED).build();
+            var accountId = transaction.getAccountId();
+            var account = dummyAccount().id(accountId).build();
+            repository.insert(transaction);
+
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
+
+            assertThrows(IllegalStateException.class, () -> service.confirm(transaction.getId()));
         }
 
         @Test
@@ -563,12 +517,12 @@ class TransactionServiceTest {
             repository.insert(transaction1);
             repository.insert(transaction2);
 
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
 
-            service.confirmTransaction(transaction1.getId());
+            service.confirm(transaction1.getId());
 
             verify(balanceService, times(1))
                     .deposit(accountId2, transaction2.getAmount());
@@ -586,12 +540,12 @@ class TransactionServiceTest {
             repository.insert(transaction1);
             repository.insert(transaction2);
 
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
 
-            service.confirmTransaction(transaction1.getId());
+            service.confirm(transaction1.getId());
 
             verify(balanceService, times(0))
                     .withdraw(accountId1, transaction1.getAmount());
@@ -604,17 +558,17 @@ class TransactionServiceTest {
             var account = dummyAccount().id(accountId).build();
             repository.insert(transaction);
 
-            when(accountService.findById(accountId))
-                    .thenReturn(Optional.of(account));
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
 
-            service.confirmTransaction(transaction.getId());
+            service.confirm(transaction.getId());
 
             verify(balanceService, times(1))
                     .withdraw(accountId, transaction.getAmount());
         }
 
         @Test
-        void updates_transaction_state_in_incoming_transfer() {
+        void updates_transaction_state_in_incoming_transaction() {
             var groupId = randomTransactionGroupId();
             var transaction1 = dummyTransfer().groupId(groupId).build();
             var accountId1 = transaction1.getAccountId();
@@ -625,12 +579,12 @@ class TransactionServiceTest {
             repository.insert(transaction1);
             repository.insert(transaction2);
 
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
 
-            service.confirmTransaction(transaction1.getId());
+            service.confirm(transaction1.getId());
 
             assertThat(repository.findTransactionById(transaction2.getId()))
                     .get()
@@ -645,7 +599,7 @@ class TransactionServiceTest {
         }
 
         @Test
-        void updates_transaction_state_in_outgoing_transfer() {
+        void updates_transaction_state_in_outgoing_transaction() {
             var groupId = randomTransactionGroupId();
             var transaction1 = dummyTransfer().groupId(groupId).build();
             var accountId1 = transaction1.getAccountId();
@@ -656,12 +610,12 @@ class TransactionServiceTest {
             repository.insert(transaction1);
             repository.insert(transaction2);
 
-            when(accountService.findById(accountId1))
-                    .thenReturn(Optional.of(account1));
-            when(accountService.findById(accountId2))
-                    .thenReturn(Optional.of(account2));
+            when(accountService.getById(accountId1))
+                    .thenReturn(account1);
+            when(accountService.getById(accountId2))
+                    .thenReturn(account2);
 
-            service.confirmTransaction(transaction1.getId());
+            service.confirm(transaction1.getId());
 
             assertThat(repository.findTransactionById(transaction1.getId()))
                     .get()

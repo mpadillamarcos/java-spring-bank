@@ -65,4 +65,8 @@ public class Account {
                 .state(CLOSED)
                 .build();
     }
+
+    public void isOpen() {
+        requireState(state, OPEN);
+    }
 }

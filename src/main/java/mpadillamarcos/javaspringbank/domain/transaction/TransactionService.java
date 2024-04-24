@@ -21,7 +21,6 @@ import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTr
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
 
 @Service
@@ -112,46 +111,30 @@ public class TransactionService {
         repository.insert(depositTransaction);
     }
 
-    public void confirmTransaction(TransactionId transactionId) {
+    public void confirm(TransactionId transactionId) {
         var transaction = repository.findTransactionById(transactionId)
                 .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
 
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
 
-        checkTransactions(transactions);
+        transactions.forEach(this::isAccountOpen);
 
-        operateTransactions(transactions);
+        transactions.forEach(this::confirm);
     }
 
-    public void rejectTransaction(TransactionId transactionId) {
-
-    }
-
-    private void operateTransactions(List<Transaction> transactions) {
-        for (Transaction transaction : transactions) {
-            if (transaction.getDirection().equals(INCOMING)) {
-                balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
-            }
-            if (transaction.getDirection().equals(OUTGOING) && !transaction.getType().equals(TRANSFER)) {
-                balanceService.withdraw(transaction.getAccountId(), transaction.getAmount());
-            }
-            repository.update(transaction.confirm());
+    private void confirm(Transaction transaction) {
+        repository.update(transaction.confirm());
+        if (transaction.is(INCOMING)) {
+            balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
+        }
+        if (transaction.is(OUTGOING) && !transaction.is(TRANSFER)) {
+            balanceService.withdraw(transaction.getAccountId(), transaction.getAmount());
         }
     }
 
-    private void checkTransactions(List<Transaction> transactions) {
-        for (Transaction transaction : transactions) {
-            if (transaction.getState() != PENDING) {
-                throw new IllegalStateException("Transaction with ID " + transaction.getId().value() + " is " + transaction.getState());
-            }
-            var accountId = transaction.getAccountId();
-            var account = accountService.findById(accountId)
-                    .orElseThrow(() -> new NotFoundException("Account with ID " + accountId.value() + " was not found"));
-            if (account.getState() != OPEN) {
-                throw new IllegalStateException("Account with ID " + accountId + " is not open");
-            }
-
-        }
+    private void isAccountOpen(Transaction transaction) {
+        var account = accountService.getById(transaction.getAccountId());
+        account.isOpen();
     }
 
     private void canOperate(AccountId accountId, UserId userId) {

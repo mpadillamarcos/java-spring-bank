@@ -75,6 +75,6 @@ public class TransactionController {
 
     @PostMapping("/transactions/{transactionId}/confirm")
     public void confirm(@PathVariable UUID transactionId) {
-        service.confirmTransaction(transactionId(transactionId));
+        service.confirm(transactionId(transactionId));
     }
 }

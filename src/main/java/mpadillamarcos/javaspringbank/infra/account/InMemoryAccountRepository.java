@@ -44,4 +44,9 @@ public class InMemoryAccountRepository implements AccountRepository {
                 .map(accounts::get)
                 .toList();
     }
+
+    @Override
+    public Account getById(AccountId accountId) {
+        return accounts.get(accountId);
+    }
 }

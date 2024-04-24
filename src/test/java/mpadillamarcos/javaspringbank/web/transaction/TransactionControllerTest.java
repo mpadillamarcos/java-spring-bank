@@ -267,7 +267,7 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .confirmTransaction(transactionId);
+                    .confirm(transactionId);
         }
     }
 }

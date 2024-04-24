@@ -68,6 +68,10 @@ public class AccountService {
         return repository.findById(accountId);
     }
 
+    public Account getById(AccountId accountId) {
+        return repository.getById(accountId);
+    }
+
     public void blockUserAccount(UserId userId, AccountId accountId) {
         var account = getUserAccount(userId, accountId);
 

@@ -9,8 +9,7 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import java.time.Instant;
 
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.CONFIRMED;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.PENDING;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransactionState.*;
 import static mpadillamarcos.javaspringbank.utils.Checks.require;
 import static mpadillamarcos.javaspringbank.utils.Checks.requireState;
 
@@ -60,14 +59,26 @@ public class Transaction {
     }
 
     public Transaction confirm() {
-        if (state == CONFIRMED) {
-            return this;
-        }
-
         requireState(state, PENDING);
 
         return toBuilder()
                 .state(CONFIRMED)
                 .build();
+    }
+
+    public Transaction reject() {
+        requireState(state, PENDING, CONFIRMED);
+
+        return toBuilder()
+                .state(REJECTED)
+                .build();
+    }
+
+    public boolean is(TransactionDirection direction) {
+        return this.direction == direction;
+    }
+
+    public boolean is(TransactionType type) {
+        return this.type == type;
     }
 }

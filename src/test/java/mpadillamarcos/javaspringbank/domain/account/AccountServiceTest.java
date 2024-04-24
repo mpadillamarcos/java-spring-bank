@@ -191,6 +191,20 @@ class AccountServiceTest {
     }
 
     @Nested
+    class GetById {
+
+        @Test
+        void returns_account() {
+            var account = dummyAccount().build();
+            repository.insert(account);
+
+            var response = service.getById(account.getId());
+
+            assertThat(response).isEqualTo(account);
+        }
+    }
+
+    @Nested
     class BlockUserAccount {
 
         @Test
