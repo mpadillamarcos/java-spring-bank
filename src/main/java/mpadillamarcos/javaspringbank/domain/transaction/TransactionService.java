@@ -78,8 +78,6 @@ public class TransactionService {
 
         canOperate(accountId, userId);
 
-        balanceService.withdraw(accountId, withdrawRequest.getAmount());
-
         var withdrawTransaction = newTransaction()
                 .groupId(randomTransactionGroupId())
                 .userId(userId)
@@ -99,8 +97,6 @@ public class TransactionService {
         var accountId = depositRequest.getAccountId();
 
         canOperate(accountId, userId);
-
-        balanceService.deposit(accountId, depositRequest.getAmount());
 
         var depositTransaction = newTransaction()
                 .groupId(randomTransactionGroupId())
@@ -125,6 +121,10 @@ public class TransactionService {
         checkTransactions(transactions);
 
         operateTransactions(transactions);
+    }
+
+    public void rejectTransaction(TransactionId transactionId) {
+
     }
 
     private void operateTransactions(List<Transaction> transactions) {

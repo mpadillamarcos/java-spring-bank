@@ -331,26 +331,7 @@ class TransactionServiceTest {
         }
 
         @Test
-        void updates_account_balance() {
-            var request = dummyWithdrawRequest();
-            var userId = request.getUserId();
-            var accountId = request.getAccountId();
-            var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
-
-            when(accountService.findById(accountId))
-                    .thenReturn(Optional.of(account));
-            when(accessService.findAccountAccess(accountId, userId))
-                    .thenReturn(Optional.of(access));
-
-            service.withdraw(request);
-
-            verify(balanceService, times(1))
-                    .withdraw(accountId, request.getAmount());
-        }
-
-        @Test
-        void creates_new_withdrawal() {
+        void creates_new_withdrawal_transaction() {
             var request = dummyWithdrawRequest();
             var userId = request.getUserId();
             var accountId = request.getAccountId();
@@ -457,26 +438,7 @@ class TransactionServiceTest {
         }
 
         @Test
-        void updates_account_balance() {
-            var request = dummyDepositRequest();
-            var userId = request.getUserId();
-            var accountId = request.getAccountId();
-            var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
-
-            when(accountService.findById(accountId))
-                    .thenReturn(Optional.of(account));
-            when(accessService.findAccountAccess(accountId, userId))
-                    .thenReturn(Optional.of(access));
-
-            service.deposit(request);
-
-            verify(balanceService, times(1))
-                    .deposit(accountId, request.getAmount());
-        }
-
-        @Test
-        void creates_new_deposit() {
+        void creates_new_deposit_transaction() {
             var request = dummyDepositRequest();
             var userId = request.getUserId();
             var accountId = request.getAccountId();
@@ -713,7 +675,6 @@ class TransactionServiceTest {
                     .returns(transaction1.getConcept(), Transaction::getConcept);
         }
     }
-
 
     private static AccountAccess access(OperationRequest request) {
         return access(request, GRANTED, OWNER);
