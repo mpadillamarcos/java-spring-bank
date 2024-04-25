@@ -2,16 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="mpadillamarcos.javaspringbank.infra.access.AccessMapper">
 
-    <resultMap id="access" type="mpadillamarcos.javaspringbank.domain.access.AccountAccess">
-        <constructor>
-            <arg column="account_id"/>
-            <arg column="user_id"/>
-            <arg column="created_date"/>
-            <arg column="type"/>
-            <arg column="state"/>
-        </constructor>
-    </resultMap>
-
     <insert id="insert">
         INSERT INTO accesses(account_id, user_id, created_date, type, state)
         VALUES(#{accountId.value}, #{userId.value}, #{createdDate}, #{type}, #{state})
@@ -40,5 +30,4 @@
         FROM accesses
         WHERE user_id = #{value} AND state = 'GRANTED'
     </select>
-
 </mapper>
