@@ -4,7 +4,6 @@ import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessRepository;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
-import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Optional;
 
 import static mpadillamarcos.javaspringbank.domain.access.AccessState.GRANTED;
 
-@Repository
 public class InMemoryAccountAccessRepository implements AccountAccessRepository {
 
     private final Map<AccountAccessKey, AccountAccess> accountAccesses = new HashMap<>();
