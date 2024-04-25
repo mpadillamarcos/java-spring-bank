@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mpadillamarcos.javaspringbank.infra.balance.BalanceMapper">
+
+    <resultMap id="balance" type="mpadillamarcos.javaspringbank.domain.balance.Balance">
+        <constructor>
+            <idArg column="account_id" javaType="mpadillamarcos.javaspringbank.domain.account.AccountId"/>
+            <arg resultMap="money" javaType="mpadillamarcos.javaspringbank.domain.money.Money"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap type="mpadillamarcos.javaspringbank.domain.money.Money" id="money">
+        <constructor>
+            <arg column="amount" javaType="java.math.BigDecimal"/>
+            <arg column="currency" javaType="mpadillamarcos.javaspringbank.domain.money.Currency"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO balances(account_id, amount, currency)
+        VALUES(#{accountId.value}, #{amount.amount}, #{amount.currency})
+    </insert>
+
+    <select id="findBalance" resultMap="balance">
+        SELECT account_id, amount, currency
+        FROM balances
+        WHERE account_id = #{accountId}
+    </select>
+
+    <update id="update">
+        UPDATE balances
+        SET amount = #{amount.amount}
+        WHERE account_id = #{accountId}
+    </update>
+
+    <select id="findBalances" resultMap="balance">
+        SELECT account_id, amount, currency
+        FROM balances
+        WHERE account_id IN
+        <foreach item="accountId" collection="collection" open="(" separator="," close=")">
+            #{accountId}
+        </foreach>
+    </select>
+
+</mapper>
