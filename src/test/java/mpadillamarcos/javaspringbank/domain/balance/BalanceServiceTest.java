@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyBalance;
@@ -28,7 +29,8 @@ class BalanceServiceTest {
 
         service.createBalance(accountId);
 
-        assertThat(repository.getBalance(accountId))
+        assertThat(repository.findBalance(accountId))
+                .get()
                 .returns(accountId, Balance::getAccountId)
                 .returns(Money.zero(EUR), Balance::getAmount);
     }
@@ -82,7 +84,8 @@ class BalanceServiceTest {
 
             service.withdraw(accountId, Money.eur(150));
 
-            assertThat(repository.getBalance(accountId))
+            assertThat(repository.findBalance(accountId))
+                    .get()
                     .returns(Money.eur(50), Balance::getAmount);
         }
     }
@@ -98,7 +101,8 @@ class BalanceServiceTest {
 
             service.deposit(accountId, Money.eur(50));
 
-            assertThat(repository.getBalance(accountId))
+            assertThat(repository.findBalance(accountId))
+                    .get()
                     .returns(Money.eur(250), Balance::getAmount);
         }
     }

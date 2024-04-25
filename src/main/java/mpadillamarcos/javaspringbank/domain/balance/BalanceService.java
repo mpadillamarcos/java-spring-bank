@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.domain.balance;
 
 import lombok.RequiredArgsConstructor;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
+import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +24,12 @@ public class BalanceService {
     }
 
     public Balance getBalance(AccountId accountId) {
-        return repository.getBalance(accountId);
+        return repository.findBalance(accountId)
+                .orElseThrow(() -> new NotFoundException("balance not found"));
     }
 
     public List<Balance> getBalances(Set<AccountId> accountIds) {
-        return repository.getBalances(accountIds);
+        return repository.findBalances(accountIds);
     }
 
     public void withdraw(AccountId accountId, Money amount) {
