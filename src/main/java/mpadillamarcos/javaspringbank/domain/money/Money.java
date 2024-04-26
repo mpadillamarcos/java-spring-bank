@@ -5,6 +5,7 @@ import lombok.Value;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 
 import static java.math.BigDecimal.ZERO;
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
@@ -50,9 +51,16 @@ public class Money {
         return this.amount.compareTo(amount.getAmount()) == -1;
     }
 
-    public String toStringWithCurrency() {
-        var amount = this.amount.setScale(2, RoundingMode.HALF_UP);
-        return amount.toString().concat(" ").concat(this.currency.getSymbol());
+    @Override
+    public String toString() {
+        String amount;
+        if (this.amount.doubleValue() % 1 == 0) {
+            DecimalFormat df = new DecimalFormat("#");
+            amount = df.format(this.amount);
+        } else {
+            amount = this.amount.setScale(2, RoundingMode.HALF_UP).toString();
+        }
+        return this.currency.getSymbol().concat(amount);
     }
 
     private void checkCurrency(Money amount) {

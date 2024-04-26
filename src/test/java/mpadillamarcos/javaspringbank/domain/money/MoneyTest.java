@@ -113,9 +113,16 @@ class MoneyTest {
     }
 
     @Test
-    void returns_a_string_with_the_amount_and_the_currency_symbol() {
+    void returns_a_string_with_the_rounded_amount_and_the_currency_symbol() {
         var money = Money.eur(160.3654);
 
-        assertThat(money.toStringWithCurrency()).isEqualTo("160.37 €");
+        assertThat(money.toString()).isEqualTo("€160.37");
+    }
+
+    @Test
+    void returns_a_string_with_the_amount_with_no_decimals_and_the_currency_symbol() {
+        var money = Money.builder().amount(BigDecimal.valueOf(100000.00)).currency(YEN).build();
+
+        assertThat(money.toString()).isEqualTo("¥100000");
     }
 }
