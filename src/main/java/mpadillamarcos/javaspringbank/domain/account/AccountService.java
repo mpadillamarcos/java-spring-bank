@@ -56,7 +56,7 @@ public class AccountService {
                 .toList();
     }
 
-    public Optional<AccountView> findUserAccount(UserId userId, AccountId accountId) {
+    public Optional<AccountView> findAccountView(UserId userId, AccountId accountId) {
         var access = accessService.findAccountAccess(accountId, userId).orElseThrow(this::accountNotFound);
         var account = repository.findById(accountId).orElseThrow(this::accountNotFound);
         var balance = balanceService.getBalance(accountId);
@@ -64,36 +64,27 @@ public class AccountService {
         return Optional.of(new AccountView(account, access, balance));
     }
 
-    public Optional<Account> findById(AccountId accountId) {
-        return repository.findById(accountId);
-    }
-
     public Account getById(AccountId accountId) {
         return repository.findById(accountId)
                 .orElseThrow(this::accountNotFound);
     }
 
-    public void blockUserAccount(UserId userId, AccountId accountId) {
-        var account = getUserAccount(userId, accountId);
+    public void blockAccount(AccountId accountId) {
+        var account = getById(accountId);
 
         repository.update(account.block());
     }
 
-    public void reopenUserAccount(UserId userId, AccountId accountId) {
-        var account = getUserAccount(userId, accountId);
+    public void unblockAccount(AccountId accountId) {
+        var account = getById(accountId);
 
-        repository.update(account.reopen());
+        repository.update(account.unblock());
     }
 
-    public void closeUserAccount(UserId userId, AccountId accountId) {
-        var account = getUserAccount(userId, accountId);
+    public void closeAccount(AccountId accountId) {
+        var account = getById(accountId);
 
         repository.update(account.close());
-    }
-
-    private Account getUserAccount(UserId userId, AccountId accountId) {
-        return repository.findUserAccount(userId, accountId)
-                .orElseThrow(this::accountNotFound);
     }
 
     private NotFoundException accountNotFound() {

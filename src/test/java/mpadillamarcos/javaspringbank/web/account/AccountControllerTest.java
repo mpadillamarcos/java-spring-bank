@@ -117,7 +117,7 @@ class AccountControllerTest {
             var balance = dummyBalance().accountId(accountId).build();
             var accountView = new AccountView(account, access, balance);
 
-            when(accountService.findUserAccount(account.getUserId(), account.getId()))
+            when(accountService.findAccountView(account.getUserId(), account.getId()))
                     .thenReturn(Optional.of(accountView));
 
             mockMvc.perform(get("/users/{userId}/accounts/{accountId}", userId.value(), accountId.value()))
@@ -134,7 +134,7 @@ class AccountControllerTest {
             var userId = randomUserId();
             var accountId = randomAccountId();
 
-            when(accountService.findUserAccount(userId, accountId)).thenReturn(Optional.empty());
+            when(accountService.findAccountView(userId, accountId)).thenReturn(Optional.empty());
 
             mockMvc.perform(get("/users/{userId}/accounts/{accountId}", userId.value(), accountId.value()))
                     .andExpect(status().isNotFound())
@@ -143,83 +143,62 @@ class AccountControllerTest {
     }
 
     @Nested
-    class BlockUserAccount {
-
-        @Test
-        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb/block"))
-                    .andExpect(status().isBadRequest());
-        }
+    class BlockAccount {
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5/block"))
+            mockMvc.perform(post("/accounts/5/block"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_ok_when_blocking_user_account() throws Exception {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            mockMvc.perform(post("/users/{userId}/accounts/{accountId}/block", userId.value(), accountId.value()))
+            mockMvc.perform(post("/accounts/{accountId}/block", accountId.value()))
                     .andExpect(status().isOk());
 
-            verify(accountService).blockUserAccount(userId, accountId);
+            verify(accountService).blockAccount(accountId);
         }
     }
 
     @Nested
-    class ReopenUserAccount {
-
-        @Test
-        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb/reopen"))
-                    .andExpect(status().isBadRequest());
-        }
+    class UnblockAccount {
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5/reopen"))
+            mockMvc.perform(post("/accounts/5/unblock"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_ok_when_reopening_user_account() throws Exception {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            mockMvc.perform(post("/users/{userId}/accounts/{accountId}/reopen", userId.value(), accountId.value()))
+            mockMvc.perform(post("/accounts/{accountId}/unblock", accountId.value()))
                     .andExpect(status().isOk());
 
-            verify(accountService).reopenUserAccount(userId, accountId);
+            verify(accountService).unblockAccount(accountId);
         }
     }
 
     @Nested
-    class CloseUserAccount {
-
-        @Test
-        void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(delete("/users/5/accounts/e095d288-9456-491d-b3a2-94c6d2d79dbb"))
-                    .andExpect(status().isBadRequest());
-        }
+    class CloseAccount {
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(delete("/users/e095d288-9456-491d-b3a2-94c6d2d79dbb/accounts/5"))
+            mockMvc.perform(delete("/accounts/5"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_ok_when_closing_user_account() throws Exception {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            mockMvc.perform(delete("/users/{userId}/accounts/{accountId}", userId.value(), accountId.value()))
+            mockMvc.perform(delete("/accounts/{accountId}", accountId.value()))
                     .andExpect(status().isOk());
 
-            verify(accountService).closeUserAccount(userId, accountId);
+            verify(accountService).closeAccount(accountId);
         }
     }
 }

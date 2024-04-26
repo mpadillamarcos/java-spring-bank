@@ -3,7 +3,6 @@ package mpadillamarcos.javaspringbank.infra.account;
 import mpadillamarcos.javaspringbank.domain.account.Account;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.account.AccountRepository;
-import mpadillamarcos.javaspringbank.domain.user.UserId;
 
 import java.util.*;
 
@@ -17,12 +16,6 @@ public class InMemoryAccountRepository implements AccountRepository {
             throw new IllegalStateException("account already exists");
         }
         accounts.put(account.getId(), account);
-    }
-
-    @Override
-    public Optional<Account> findUserAccount(UserId userId, AccountId accountId) {
-        return Optional.ofNullable(accounts.get(accountId))
-                .filter(account -> account.getUserId().equals(userId));
     }
 
     @Override

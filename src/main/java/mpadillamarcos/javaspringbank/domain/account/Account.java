@@ -44,7 +44,7 @@ public class Account {
                 .build();
     }
 
-    public Account reopen() {
+    public Account unblock() {
         if (state == OPEN) {
             return this;
         }

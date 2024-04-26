@@ -79,7 +79,7 @@ class AccountTest {
         var account = dummyAccount().build();
         var blocked = account.block();
 
-        var reopened = blocked.reopen();
+        var reopened = blocked.unblock();
 
         assertThat(reopened.getState()).isEqualTo(OPEN);
     }
@@ -88,7 +88,7 @@ class AccountTest {
     void throws_exception_when_reopening_a_closed_account() {
         var account = dummyAccount().state(CLOSED).build();
 
-        var exception = assertThrows(IllegalStateException.class, account::reopen);
+        var exception = assertThrows(IllegalStateException.class, account::unblock);
 
         assertThat(exception).hasMessage("expected state to be one of [BLOCKED] but was CLOSED");
     }
@@ -97,7 +97,7 @@ class AccountTest {
     void does_nothing_when_reopening_an_open_account() {
         var account = dummyAccount().state(OPEN).build();
 
-        var open = account.reopen();
+        var open = account.unblock();
 
         assertThat(open).isSameAs(account);
     }

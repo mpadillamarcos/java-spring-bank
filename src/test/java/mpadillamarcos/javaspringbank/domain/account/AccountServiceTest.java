@@ -3,7 +3,6 @@ package mpadillamarcos.javaspringbank.domain.account;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
-import mpadillamarcos.javaspringbank.domain.user.UserId;
 import mpadillamarcos.javaspringbank.infra.TestClock;
 import mpadillamarcos.javaspringbank.infra.account.InMemoryAccountRepository;
 import org.junit.jupiter.api.Nested;
@@ -72,7 +71,7 @@ class AccountServiceTest {
 
             var account = service.openAccount(userId);
 
-            assertThat(repository.findUserAccount(userId, account.getAccountId()))
+            assertThat(repository.findById(account.getAccountId()))
                     .get()
                     .returns(account.getAccountId(), Account::getId)
                     .returns(userId, Account::getUserId)
@@ -162,7 +161,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(access));
             when(balanceService.getBalance(accountId)).thenReturn(balance);
 
-            var response = service.findUserAccount(userId, accountId);
+            var response = service.findAccountView(userId, accountId);
 
             assertThat(response).isEqualTo(Optional.of(accountView));
         }
@@ -184,7 +183,7 @@ class AccountServiceTest {
                     .thenReturn(Optional.of(access));
             when(balanceService.getBalance(accountId)).thenReturn(balance);
 
-            var response = service.findUserAccount(userId, accountId);
+            var response = service.findAccountView(userId, accountId);
 
             assertThat(response).isEqualTo(Optional.of(accountView));
         }
@@ -195,8 +194,7 @@ class AccountServiceTest {
 
         @Test
         void returns_account() {
-            var account = dummyAccount().build();
-            repository.insert(account);
+            var account = createAccount(dummyAccount());
 
             var response = service.getById(account.getId());
 
@@ -209,20 +207,18 @@ class AccountServiceTest {
 
         @Test
         void throws_not_found_exception_when_account_does_not_exist() {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            assertThrows(NotFoundException.class, () -> service.blockUserAccount(userId, accountId));
+            assertThrows(NotFoundException.class, () -> service.blockAccount(accountId));
         }
 
         @Test
         void blocks_user_account() {
-            var userId = randomUserId();
-            var account = createAccount(userId);
+            var account = createAccount(dummyAccount());
 
-            service.blockUserAccount(userId, account.getId());
+            service.blockAccount(account.getId());
 
-            assertStateIs(userId, account.getId(), BLOCKED);
+            assertStateIs(account.getId(), BLOCKED);
         }
     }
 
@@ -231,21 +227,19 @@ class AccountServiceTest {
 
         @Test
         void throws_not_found_exception_when_account_does_not_exist() {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            assertThrows(NotFoundException.class, () -> service.reopenUserAccount(userId, accountId));
+            assertThrows(NotFoundException.class, () -> service.unblockAccount(accountId));
         }
 
         @Test
         void reopens_user_account() {
-            var userId = randomUserId();
-            var account = createAccount(userId);
-            service.blockUserAccount(userId, account.getId());
+            var account = createAccount(dummyAccount());
+            service.blockAccount(account.getId());
 
-            service.reopenUserAccount(userId, account.getId());
+            service.unblockAccount(account.getId());
 
-            assertStateIs(userId, account.getId(), OPEN);
+            assertStateIs(account.getId(), OPEN);
         }
     }
 
@@ -254,25 +248,19 @@ class AccountServiceTest {
 
         @Test
         void throws_not_found_exception_when_account_does_not_exist() {
-            var userId = randomUserId();
             var accountId = randomAccountId();
 
-            assertThrows(NotFoundException.class, () -> service.closeUserAccount(userId, accountId));
+            assertThrows(NotFoundException.class, () -> service.closeAccount(accountId));
         }
 
         @Test
         void closes_user_account() {
-            var userId = randomUserId();
-            var account = createAccount(userId);
+            var account = createAccount(dummyAccount());
 
-            service.closeUserAccount(userId, account.getId());
+            service.closeAccount(account.getId());
 
-            assertStateIs(userId, account.getId(), CLOSED);
+            assertStateIs(account.getId(), CLOSED);
         }
-    }
-
-    private Account createAccount(UserId userId) {
-        return createAccount(dummyAccount().userId(userId));
     }
 
     private Account createAccount(Account.AccountBuilder builder) {
@@ -283,8 +271,8 @@ class AccountServiceTest {
         return account;
     }
 
-    private void assertStateIs(UserId userId, AccountId accountId, AccountState state) {
-        assertThat(repository.findUserAccount(userId, accountId))
+    private void assertStateIs(AccountId accountId, AccountState state) {
+        assertThat(repository.findById(accountId))
                 .get()
                 .returns(state, Account::getState);
     }

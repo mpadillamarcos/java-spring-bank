@@ -15,45 +15,44 @@ import static mpadillamarcos.javaspringbank.domain.user.UserId.userId;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users/{userId}/accounts")
 public class AccountController {
 
     private final AccountService service;
 
-    @PostMapping
+    @PostMapping("/users/{userId}/accounts")
     public AccountViewDto openAccount(@PathVariable UUID userId) {
         return toDto(service.openAccount(userId(userId)));
     }
 
-    @GetMapping
+    @GetMapping("/users/{userId}/accounts")
     public List<AccountViewDto> listUserAccounts(@PathVariable UUID userId) {
         return service.listUserAccounts(userId(userId)).stream()
                 .map(this::toDto)
                 .toList();
     }
 
-    @GetMapping("/{accountId}")
-    public AccountViewDto findUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
-        Optional<AccountView> accountView = service.findUserAccount(userId(userId), accountId(accountId));
+    @GetMapping("/users/{userId}/accounts/{accountId}")
+    public AccountViewDto findAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
+        Optional<AccountView> accountView = service.findAccountView(userId(userId), accountId(accountId));
         if (accountView.isEmpty()) {
             throw new NotFoundException("account not found");
         }
         return toDto(accountView.get());
     }
 
-    @PostMapping("/{accountId}/block")
-    public void blockUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
-        service.blockUserAccount(userId(userId), accountId(accountId));
+    @PostMapping("accounts/{accountId}/block")
+    public void blockAccount(@PathVariable UUID accountId) {
+        service.blockAccount(accountId(accountId));
     }
 
-    @PostMapping("/{accountId}/reopen")
-    public void reopenUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
-        service.reopenUserAccount(userId(userId), accountId(accountId));
+    @PostMapping("accounts/{accountId}/unblock")
+    public void unblockAccount(@PathVariable UUID accountId) {
+        service.unblockAccount(accountId(accountId));
     }
 
-    @DeleteMapping("/{accountId}")
-    public void closeUserAccount(@PathVariable UUID userId, @PathVariable UUID accountId) {
-        service.closeUserAccount(userId(userId), accountId(accountId));
+    @DeleteMapping("accounts/{accountId}")
+    public void closeAccount(@PathVariable UUID accountId) {
+        service.closeAccount(accountId(accountId));
     }
 
     private AccountViewDto toDto(AccountView account) {
