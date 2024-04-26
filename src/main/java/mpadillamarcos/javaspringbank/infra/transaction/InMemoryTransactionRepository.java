@@ -5,13 +5,11 @@ import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionId;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.*;
 
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.transactionId;
 
-@Repository
 public class InMemoryTransactionRepository implements TransactionRepository {
 
     private final Map<TransactionId, Transaction> transactions = new HashMap<>();

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mpadillamarcos.javaspringbank.infra.transaction.TransactionMapper">
+
+    <resultMap id="transaction" type="mpadillamarcos.javaspringbank.domain.transaction.Transaction">
+        <constructor>
+            <idArg column="id" javaType="mpadillamarcos.javaspringbank.domain.transaction.TransactionId"/>
+            <arg column="group_id" javaType="mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId"/>
+            <arg column="user_id" javaType="mpadillamarcos.javaspringbank.domain.user.UserId"/>
+            <arg column="account_id" javaType="mpadillamarcos.javaspringbank.domain.account.AccountId"/>
+            <arg resultMap="money" javaType="mpadillamarcos.javaspringbank.domain.money.Money"/>
+            <arg column="created_date" javaType="java.time.Instant"/>
+            <arg column="state" javaType="mpadillamarcos.javaspringbank.domain.transaction.TransactionState"/>
+            <arg column="direction" javaType="mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection"/>
+            <arg column="type" javaType="mpadillamarcos.javaspringbank.domain.transaction.TransactionType"/>
+            <arg column="concept" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="money" type="mpadillamarcos.javaspringbank.domain.money.Money">
+        <constructor>
+            <arg column="amount" javaType="java.math.BigDecimal"/>
+            <arg column="currency" javaType="mpadillamarcos.javaspringbank.domain.money.Currency"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findTransactionById" resultMap="transaction">
+        SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
+        FROM transactions
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO transactions(id, group_id, user_id, account_id, amount, currency, created_date, state, direction,
+        type, concept)
+        VALUES(#{id}, #{groupId}, #{userId}, #{accountId}, #{amount.amount}, #{amount.currency}, #{createdDate},
+        #{state}, #{direction}, #{type}, #{concept})
+    </insert>
+
+    <update id="update">
+        UPDATE transactions
+        SET state = #{state}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findTransactionsByGroupId" resultMap="transaction">
+        SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
+        FROM transactions
+        WHERE group_id = #{groupId}
+    </select>
+
+    <select id="findTransactionsByAccountId" resultMap="transaction">
+        SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
+        FROM transactions
+        WHERE account_id = #{accountId}
+    </select>
+</mapper>
