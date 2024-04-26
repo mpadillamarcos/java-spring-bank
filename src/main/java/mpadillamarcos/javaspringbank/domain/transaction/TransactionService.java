@@ -108,6 +108,10 @@ public class TransactionService {
         repository.insert(depositTransaction);
     }
 
+    public List<Transaction> listTransactionsByAccountId(AccountId accountId) {
+        return repository.findTransactionsByAccountId(accountId);
+    }
+
     public void confirm(TransactionId transactionId) {
         var transaction = getTransactionById(transactionId);
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
@@ -139,13 +143,6 @@ public class TransactionService {
         }
     }
 
-    private void isAccountOpen(Transaction transaction) {
-        var account = accountService.getById(transaction.getAccountId());
-        if (!account.is(OPEN)) {
-            throw new IllegalStateException("The account with ID " + account.getId().value() + " is not open");
-        }
-    }
-
     private void canOperate(AccountId accountId, UserId userId) {
         checkAccountIsOpen(accountId);
         var access = accessService.findAccountAccess(accountId, userId)
@@ -160,6 +157,13 @@ public class TransactionService {
         var account = accountService.getById(accountId);
         if (!account.is(OPEN)) {
             throw new TransactionNotAllowedException("The account with ID " + accountId.value() + " is " + account.getState());
+        }
+    }
+
+    private void isAccountOpen(Transaction transaction) {
+        var account = accountService.getById(transaction.getAccountId());
+        if (!account.is(OPEN)) {
+            throw new IllegalStateException("The account with ID " + account.getId().value() + " is not open");
         }
     }
 

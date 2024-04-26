@@ -11,9 +11,9 @@ public interface TransactionRepository {
 
     Optional<Transaction> findTransactionById(TransactionId transactionId);
 
-    Optional<Transaction> findLastTransactionByAccountId(AccountId accountId);
-
     void update(Transaction transaction);
 
     List<Transaction> findTransactionsByGroupId(TransactionGroupId groupId);
+
+    List<Transaction> findTransactionsByAccountId(AccountId accountId);
 }

@@ -37,18 +37,6 @@ public class InMemoryTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public Optional<Transaction> findLastTransactionByAccountId(AccountId accountId) {
-        TransactionId transactionId = null;
-        for (UUID[] pair : accountIdTransactionIdPairs) {
-            if (pair[0].equals(accountId.value())) {
-                transactionId = transactionId(pair[1]);
-                break;
-            }
-        }
-        return findTransactionById(transactionId);
-    }
-
-    @Override
     public void update(Transaction transaction) {
         transactions.put(transaction.getId(), transaction);
     }
@@ -61,6 +49,20 @@ public class InMemoryTransactionRepository implements TransactionRepository {
             transactionsByGroupId.add(transactions.get(transactionId));
         }
         return transactionsByGroupId;
+    }
+
+    @Override
+    public List<Transaction> findTransactionsByAccountId(AccountId accountId) {
+        List<Transaction> transactionsList = new ArrayList<>();
+        for (UUID[] pair : accountIdTransactionIdPairs) {
+            TransactionId transactionId = null;
+            if (pair[0].equals(accountId.value())) {
+                transactionId = transactionId(pair[1]);
+                var transaction = findTransactionById(transactionId);
+                transaction.ifPresent(transactionsList::add);
+            }
+        }
+        return transactionsList;
     }
 
     public Optional<Transaction> findTransactionById(TransactionId transactionId) {
