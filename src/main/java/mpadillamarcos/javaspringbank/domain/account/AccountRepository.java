@@ -17,6 +17,4 @@ public interface AccountRepository {
     Optional<Account> findById(AccountId accountId);
 
     List<Account> getAccounts(Set<AccountId> accountIds);
-
-    Account getById(AccountId accountId);
 }

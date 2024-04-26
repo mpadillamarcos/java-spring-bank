@@ -69,7 +69,8 @@ public class AccountService {
     }
 
     public Account getById(AccountId accountId) {
-        return repository.getById(accountId);
+        return repository.findById(accountId)
+                .orElseThrow(this::accountNotFound);
     }
 
     public void blockUserAccount(UserId userId, AccountId accountId) {

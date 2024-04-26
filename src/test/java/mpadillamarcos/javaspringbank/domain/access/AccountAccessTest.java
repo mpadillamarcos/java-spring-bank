@@ -116,6 +116,27 @@ class AccountAccessTest {
         assertThat(revokeAccess.getState()).isEqualTo(REVOKED);
     }
 
+    @Test
+    void returns_true_when_user_has_operation_permits() {
+        var accountAccess = dummyAccountAccess().state(GRANTED).type(OPERATOR).build();
+
+        assertThat(accountAccess.canOperate()).isTrue();
+    }
+
+    @Test
+    void returns_false_when_user_access_is_revoked() {
+        var accountAccess = dummyAccountAccess().state(REVOKED).type(OPERATOR).build();
+
+        assertThat(accountAccess.canOperate()).isFalse();
+    }
+
+    @Test
+    void returns_false_when_user_access_type_is_viewer() {
+        var accountAccess = dummyAccountAccess().state(GRANTED).type(VIEWER).build();
+
+        assertThat(accountAccess.canOperate()).isFalse();
+    }
+
     static List<Arguments> accountAccessWithMissingData() {
         return List.of(
                 Arguments.arguments("accountId", dummyAccountAccess().accountId(null)),

@@ -130,12 +130,17 @@ class AccountTest {
     }
 
     @Test
-    void throws_exception_when_account_is_not_open() {
+    void returns_true_when_state_is_the_same() {
         var account = dummyAccount().state(BLOCKED).build();
 
-        var exception = assertThrows(IllegalStateException.class, account::isOpen);
+        assertThat(account.is(BLOCKED)).isTrue();
+    }
 
-        assertThat(exception).hasMessage("expected state to be one of [OPEN] but was BLOCKED");
+    @Test
+    void returns_false_when_state_is_not_the_same() {
+        var account = dummyAccount().state(BLOCKED).build();
+
+        assertThat(account.is(OPEN)).isFalse();
     }
 
     static List<Arguments> accountsWithMissingData() {

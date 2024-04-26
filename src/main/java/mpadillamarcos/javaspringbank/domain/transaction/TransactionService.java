@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static mpadillamarcos.javaspringbank.domain.access.AccessState.REVOKED;
-import static mpadillamarcos.javaspringbank.domain.access.AccessType.VIEWER;
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
@@ -37,19 +35,18 @@ public class TransactionService {
         var userId = transferRequest.getUserId();
         var originAccountId = transferRequest.getAccountId();
         var destinationAccountId = transferRequest.getDestinationAccountId();
+        var amount = transferRequest.getAmount();
         var groupId = randomTransactionGroupId();
 
         canOperate(originAccountId, userId);
-
-        exists(destinationAccountId);
-
-        balanceService.withdraw(originAccountId, transferRequest.getAmount());
+        checkAccountIsOpen(destinationAccountId);
+        balanceService.withdraw(originAccountId, amount);
 
         var outgoingTransaction = newTransaction()
                 .groupId(groupId)
                 .userId(userId)
                 .accountId(originAccountId)
-                .amount(transferRequest.getAmount())
+                .amount(amount)
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(OUTGOING)
@@ -60,7 +57,7 @@ public class TransactionService {
                 .groupId(groupId)
                 .userId(userId)
                 .accountId(destinationAccountId)
-                .amount(transferRequest.getAmount())
+                .amount(amount)
                 .createdDate(clock.now())
                 .type(TRANSFER)
                 .direction(INCOMING)
@@ -112,28 +109,13 @@ public class TransactionService {
     }
 
     public void confirm(TransactionId transactionId) {
-        var transaction = repository.findTransactionById(transactionId)
-                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
-
+        var transaction = getTransactionById(transactionId);
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
-
-        transactions.forEach(this::isAccountOpen);
-
         transactions.forEach(this::confirm);
     }
 
-    public void reject(TransactionId transactionId) {
-        var transaction = repository.findTransactionById(transactionId)
-                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
-
-        List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
-
-        transactions.forEach(this::isAccountOpen);
-
-        transactions.forEach(this::reject);
-    }
-
     private void confirm(Transaction transaction) {
+        isAccountOpen(transaction);
         repository.update(transaction.confirm());
         if (transaction.is(INCOMING)) {
             balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
@@ -143,7 +125,14 @@ public class TransactionService {
         }
     }
 
+    public void reject(TransactionId transactionId) {
+        var transaction = getTransactionById(transactionId);
+        List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
+        transactions.forEach(this::reject);
+    }
+
     private void reject(Transaction transaction) {
+        isAccountOpen(transaction);
         repository.update(transaction.reject());
         if (transaction.is(OUTGOING) && transaction.is(TRANSFER)) {
             balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
@@ -152,26 +141,30 @@ public class TransactionService {
 
     private void isAccountOpen(Transaction transaction) {
         var account = accountService.getById(transaction.getAccountId());
-        account.isOpen();
+        if (!account.is(OPEN)) {
+            throw new IllegalStateException("The account with ID " + account.getId().value() + " is not open");
+        }
     }
 
     private void canOperate(AccountId accountId, UserId userId) {
-        exists(accountId);
-
+        checkAccountIsOpen(accountId);
         var access = accessService.findAccountAccess(accountId, userId)
                 .orElseThrow(() -> new AccessDeniedException("User with ID " + userId.value() + " has no access to that account"));
 
-        if (access.getState().equals(REVOKED) || access.getType().equals(VIEWER)) {
+        if (!access.canOperate()) {
             throw new AccessDeniedException("User with ID " + userId.value() + " has no operation permits");
         }
     }
 
-    private void exists(AccountId accountId) {
-        var account = accountService.findById(accountId)
-                .orElseThrow(() -> new NotFoundException("Account with ID " + accountId.value() + " does not exist"));
-
-        if (account.getState() != OPEN) {
+    private void checkAccountIsOpen(AccountId accountId) {
+        var account = accountService.getById(accountId);
+        if (!account.is(OPEN)) {
             throw new TransactionNotAllowedException("The account with ID " + accountId.value() + " is " + account.getState());
         }
+    }
+
+    private Transaction getTransactionById(TransactionId transactionId) {
+        return repository.findTransactionById(transactionId)
+                .orElseThrow(() -> new NotFoundException("Transaction ID " + transactionId.value() + " not found"));
     }
 }

@@ -66,7 +66,7 @@ public class Account {
                 .build();
     }
 
-    public void isOpen() {
-        requireState(state, OPEN);
+    public boolean is(AccountState state) {
+        return this.state == state;
     }
 }
