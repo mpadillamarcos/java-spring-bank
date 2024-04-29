@@ -273,6 +273,28 @@ class TransactionControllerTest {
     }
 
     @Nested
+    class RejectTransaction {
+
+        @Test
+        void returns_bad_request_when_transaction_id_is_not_uuid() throws Exception {
+            mockMvc.perform(post("/transactions/5/reject"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_ok_when_all_parameters_are_valid() throws Exception {
+            var transactionId = randomTransactionId();
+
+            mockMvc.perform(post(
+                            "/transactions/{transactionId}/reject", transactionId.value()))
+                    .andExpect(status().isOk());
+
+            verify(transactionService, times(1))
+                    .reject(transactionId);
+        }
+    }
+
+    @Nested
     class ListTransactions {
 
         @Test

@@ -67,6 +67,11 @@ public class TransactionController {
         service.confirm(transactionId(transactionId));
     }
 
+    @PostMapping("/transactions/{transactionId}/reject")
+    public void reject(@PathVariable UUID transactionId) {
+        service.reject(transactionId(transactionId));
+    }
+
     @GetMapping("/accounts/{accountId}/transactions")
     public List<TransactionDto> listTransactions(@PathVariable UUID accountId) {
         return service.listTransactionsByAccountId(accountId(accountId))
