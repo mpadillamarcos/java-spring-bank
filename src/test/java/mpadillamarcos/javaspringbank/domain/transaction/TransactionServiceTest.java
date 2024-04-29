@@ -4,11 +4,13 @@ import mpadillamarcos.javaspringbank.domain.access.AccessState;
 import mpadillamarcos.javaspringbank.domain.access.AccessType;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccess;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
+import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
 import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.AccessDeniedException;
 import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.exception.TransactionNotAllowedException;
+import mpadillamarcos.javaspringbank.domain.user.UserId;
 import mpadillamarcos.javaspringbank.infra.TestClock;
 import mpadillamarcos.javaspringbank.infra.transaction.InMemoryTransactionRepository;
 import org.junit.jupiter.api.Nested;
@@ -52,7 +54,7 @@ class TransactionServiceTest {
         @Test
         void throws_not_found_when_origin_account_does_not_exist() {
             var request = dummyTransferRequest();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
 
             when(accountService.getById(originAccountId))
                     .thenThrow(NotFoundException.class);
@@ -64,7 +66,7 @@ class TransactionServiceTest {
         void throws_exception_when_origin_account_state_is_not_open() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).state(BLOCKED).build();
 
             when(accountService.getById(originAccountId))
@@ -77,7 +79,7 @@ class TransactionServiceTest {
         void throws_exception_when_user_has_no_access_to_origin_account() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
 
             when(accountService.getById(originAccountId))
@@ -92,9 +94,9 @@ class TransactionServiceTest {
         void throws_exception_when_user_access_is_revoked() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request, REVOKED, OPERATOR);
+            var access = access(userId, originAccountId, REVOKED, OPERATOR);
 
             when(accountService.getById(originAccountId))
                     .thenReturn(originAccount);
@@ -108,9 +110,9 @@ class TransactionServiceTest {
         void throws_exception_when_user_type_is_viewer() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request, GRANTED, VIEWER);
+            var access = access(userId, originAccountId, GRANTED, VIEWER);
 
             when(accountService.getById(originAccountId))
                     .thenReturn(originAccount);
@@ -124,10 +126,10 @@ class TransactionServiceTest {
         void throws_not_found_exception_when_destination_account_does_not_exist() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request);
+            var access = access(userId, originAccountId);
 
             when(accountService.getById(originAccountId))
                     .thenReturn(originAccount);
@@ -143,10 +145,10 @@ class TransactionServiceTest {
         void throws_exception_when_destination_account_state_is_not_open() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request);
+            var access = access(userId, originAccountId);
             var destinationAccount = dummyAccount().id(destinationAccountId).state(CLOSED).build();
 
             when(accountService.getById(originAccountId))
@@ -163,10 +165,10 @@ class TransactionServiceTest {
         void updates_origin_account_balance() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request);
+            var access = access(userId, originAccountId);
             var destinationAccount = dummyAccount().id(destinationAccountId).build();
 
             when(accountService.getById(originAccountId))
@@ -186,10 +188,10 @@ class TransactionServiceTest {
         void creates_new_transaction_for_the_origin_account_user() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request);
+            var access = access(userId, originAccountId);
             var destinationAccount = dummyAccount().id(destinationAccountId).build();
             var newTransaction = dummyTransfer()
                     .accountId(originAccountId)
@@ -221,10 +223,10 @@ class TransactionServiceTest {
         void creates_new_transaction_for_the_destination_account_user() {
             var request = dummyTransferRequest();
             var userId = request.getUserId();
-            var originAccountId = request.getAccountId();
+            var originAccountId = request.getOriginAccountId();
             var destinationAccountId = request.getDestinationAccountId();
             var originAccount = dummyAccount().userId(userId).id(originAccountId).build();
-            var access = access(request);
+            var access = access(userId, originAccountId);
             var destinationAccount = dummyAccount().id(destinationAccountId).build();
             var newTransaction = dummyTransfer()
                     .accountId(destinationAccountId)
@@ -302,7 +304,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request, REVOKED, OPERATOR);
+            var access = access(userId, accountId, REVOKED, OPERATOR);
 
             when(accountService.getById(accountId))
                     .thenReturn(account);
@@ -318,7 +320,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request, GRANTED, VIEWER);
+            var access = access(userId, accountId, GRANTED, VIEWER);
 
             when(accountService.getById(accountId))
                     .thenReturn(account);
@@ -334,7 +336,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
+            var access = access(userId, accountId);
             var newTransaction = dummyWithdraw()
                     .accountId(accountId)
                     .userId(userId)
@@ -365,7 +367,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
+            var access = access(userId, accountId);
             var newTransaction = dummyWithdraw()
                     .accountId(accountId)
                     .userId(userId)
@@ -431,7 +433,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request, REVOKED, OPERATOR);
+            var access = access(userId, accountId, REVOKED, OPERATOR);
 
             when(accountService.getById(accountId))
                     .thenReturn(account);
@@ -447,7 +449,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request, GRANTED, VIEWER);
+            var access = access(userId, accountId, GRANTED, VIEWER);
 
             when(accountService.getById(accountId))
                     .thenReturn(account);
@@ -463,7 +465,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
+            var access = access(userId, accountId);
             var newTransaction = dummyDeposit()
                     .accountId(accountId)
                     .userId(userId)
@@ -494,7 +496,7 @@ class TransactionServiceTest {
             var userId = request.getUserId();
             var accountId = request.getAccountId();
             var account = dummyAccount().userId(userId).id(accountId).build();
-            var access = access(request);
+            var access = access(userId, accountId);
             var newTransaction = dummyDeposit()
                     .accountId(accountId)
                     .userId(userId)
@@ -767,14 +769,14 @@ class TransactionServiceTest {
         }
     }
 
-    private static AccountAccess access(OperationRequest request) {
-        return access(request, GRANTED, OWNER);
+    private static AccountAccess access(UserId userId, AccountId accountId) {
+        return access(userId, accountId, GRANTED, OWNER);
     }
 
-    private static AccountAccess access(OperationRequest request, AccessState state, AccessType type) {
+    private static AccountAccess access(UserId userId, AccountId accountId, AccessState state, AccessType type) {
         return dummyAccountAccess()
-                .userId(request.getUserId())
-                .accountId(request.getAccountId())
+                .userId(userId)
+                .accountId(accountId)
                 .state(state)
                 .type(type)
                 .build();

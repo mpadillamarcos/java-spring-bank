@@ -34,7 +34,7 @@ public class TransactionService {
 
     public void transfer(TransferRequest transferRequest) {
         var userId = transferRequest.getUserId();
-        var originAccountId = transferRequest.getAccountId();
+        var originAccountId = transferRequest.getOriginAccountId();
         var destinationAccountId = transferRequest.getDestinationAccountId();
         var amount = transferRequest.getAmount();
         var groupId = randomTransactionGroupId();

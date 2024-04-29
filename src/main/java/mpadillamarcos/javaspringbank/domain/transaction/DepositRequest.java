@@ -1,25 +1,30 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Value;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.DEPOSIT;
+import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-@Getter
-public class DepositRequest extends OperationRequest {
+@Value
+@Builder
+public class DepositRequest {
 
-    private final TransactionType type;
+    AccountId accountId;
+    UserId userId;
+    Money amount;
+    String concept;
 
-    @Builder(builderMethodName = "depositRequestBuilder")
-    public DepositRequest(AccountId accountId, UserId userId, Money amount, String concept, TransactionType type) {
-        super(accountId, userId, amount, concept);
-        this.type = DEPOSIT;
+    public DepositRequest(AccountId accountId, UserId userId, Money amount, String concept) {
+        this.accountId = require("accountId", accountId);
+        this.userId = require("userId", userId);
+        this.amount = require("amount", amount);
+        this.concept = concept;
+    }
+
+    public static DepositRequest.DepositRequestBuilder depositRequest() {
+        return new DepositRequestBuilder();
     }
 }

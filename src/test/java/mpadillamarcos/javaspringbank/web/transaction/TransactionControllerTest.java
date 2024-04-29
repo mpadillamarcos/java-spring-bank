@@ -1,8 +1,6 @@
 package mpadillamarcos.javaspringbank.web.transaction;
 
-import mpadillamarcos.javaspringbank.domain.transaction.DepositRequest;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
-import mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +10,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
+import static mpadillamarcos.javaspringbank.domain.transaction.DepositRequest.depositRequest;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
-import static mpadillamarcos.javaspringbank.domain.transaction.TransferRequest.transferRequestBuilder;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransferRequest.transferRequest;
+import static mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest.withdrawRequest;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -83,7 +82,7 @@ class TransactionControllerTest {
             var originAccountId = randomAccountId();
             var destinationAccountId = randomAccountId();
             var amount = eur(100);
-            var concept = "";
+            var concept = "some concept";
 
             String requestBody = String.format(
                     """
@@ -110,12 +109,11 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .transfer(transferRequestBuilder()
+                    .transfer(transferRequest()
                             .amount(amount)
                             .destinationAccountId(destinationAccountId)
                             .originAccountId(originAccountId)
                             .userId(userId)
-                            .type(TRANSFER)
                             .concept(concept)
                             .build()
                     );
@@ -127,19 +125,19 @@ class TransactionControllerTest {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/withdrawal"))
+            mockMvc.perform(post("/users/3/accounts/e095d288-9456-491d-b3a2-94c6d2d79d9b/withdraw"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
-            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/withdrawal"))
+            mockMvc.perform(post("/users/e095d288-9456-491d-b3a2-94c6d2d79d9b/accounts/6/withdraw"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         void returns_bad_request_when_required_body_is_null() throws Exception {
-            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/withdrawal")
+            mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/withdraw")
                             .content("{}")
                             .contentType(APPLICATION_JSON))
                     .andExpect(status().isBadRequest());
@@ -150,7 +148,7 @@ class TransactionControllerTest {
             var userId = randomUserId();
             var accountId = randomAccountId();
             var amount = eur(100);
-            var concept = "";
+            var concept = "some concept";
 
             String requestBody = String.format(
                     """
@@ -167,7 +165,7 @@ class TransactionControllerTest {
             );
 
             mockMvc.perform(post(
-                            "/users/{userId}/accounts/{accountId}/withdrawal",
+                            "/users/{userId}/accounts/{accountId}/withdraw",
                             userId.value(),
                             accountId.value())
                             .content(requestBody)
@@ -175,11 +173,10 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .withdraw(WithdrawRequest.withdrawRequestBuilder()
+                    .withdraw(withdrawRequest()
                             .userId(userId)
                             .accountId(accountId)
                             .amount(amount)
-                            .type(WITHDRAW)
                             .concept(concept)
                             .build());
         }
@@ -213,7 +210,7 @@ class TransactionControllerTest {
             var userId = randomUserId();
             var accountId = randomAccountId();
             var amount = eur(100);
-            var concept = "";
+            var concept = "some concept";
 
             String requestBody = String.format(
                     """
@@ -238,11 +235,10 @@ class TransactionControllerTest {
                     .andExpect(status().isOk());
 
             verify(transactionService, times(1))
-                    .deposit(DepositRequest.depositRequestBuilder()
+                    .deposit(depositRequest()
                             .userId(userId)
                             .accountId(accountId)
                             .amount(amount)
-                            .type(DEPOSIT)
                             .concept(concept)
                             .build());
         }

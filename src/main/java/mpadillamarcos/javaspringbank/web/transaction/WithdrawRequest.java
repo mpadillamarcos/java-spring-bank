@@ -5,7 +5,7 @@ import lombok.Data;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 
 @Data
-public class WithdrawOrDepositRequest {
+public class WithdrawRequest {
 
     @NotNull
     private Money amount;

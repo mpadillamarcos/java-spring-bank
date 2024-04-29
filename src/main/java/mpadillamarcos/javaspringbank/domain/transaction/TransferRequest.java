@@ -1,25 +1,36 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Value;
 import mpadillamarcos.javaspringbank.domain.account.AccountId;
 import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 
-@EqualsAndHashCode(callSuper = true)
-@ToString(callSuper = true)
-@Getter
-public class TransferRequest extends OperationRequest {
+import static mpadillamarcos.javaspringbank.utils.Checks.require;
 
-    private final AccountId destinationAccountId;
-    private final TransactionType type;
+@Value
+@Builder
+public class TransferRequest {
 
-    @Builder(builderMethodName = "transferRequestBuilder")
-    public TransferRequest(AccountId originAccountId, UserId userId, Money amount, String concept, AccountId destinationAccountId, TransactionType type) {
-        super(originAccountId, userId, amount, concept);
-        this.destinationAccountId = destinationAccountId;
-        this.type = type;
+    AccountId destinationAccountId;
+    AccountId originAccountId;
+    UserId userId;
+    Money amount;
+    String concept;
+
+    public TransferRequest(AccountId destinationAccountId,
+                           AccountId originAccountId,
+                           UserId userId,
+                           Money amount,
+                           String concept) {
+        this.originAccountId = require("originAccountId", originAccountId);
+        this.destinationAccountId = require("destinationAccountId", destinationAccountId);
+        this.userId = require("userId", userId);
+        this.amount = require("amount", amount);
+        this.concept = concept;
+    }
+
+    public static TransferRequestBuilder transferRequest() {
+        return new TransferRequestBuilder();
     }
 }

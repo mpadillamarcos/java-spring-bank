@@ -14,11 +14,14 @@ import static mpadillamarcos.javaspringbank.domain.account.Account.newAccount;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.balance.Balance.newBalance;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
+import static mpadillamarcos.javaspringbank.domain.transaction.DepositRequest.depositRequest;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.OUTGOING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionType.*;
+import static mpadillamarcos.javaspringbank.domain.transaction.TransferRequest.transferRequest;
+import static mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest.withdrawRequest;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
 import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 
@@ -44,13 +47,20 @@ public class Instances {
     }
 
     public static TransferRequest dummyTransferRequest() {
-        return TransferRequest.transferRequestBuilder()
+        return transferRequest()
                 .userId(randomUserId())
                 .originAccountId(randomAccountId())
                 .destinationAccountId(randomAccountId())
                 .amount(eur(100))
-                .type(TRANSFER)
                 .build();
+    }
+
+    public static TransferRequest.TransferRequestBuilder dummyTransferRequestBuilder() {
+        return transferRequest()
+                .userId(randomUserId())
+                .originAccountId(randomAccountId())
+                .destinationAccountId(randomAccountId())
+                .amount(eur(100));
     }
 
     public static Transaction.TransactionBuilder dummyTransfer() {
@@ -65,12 +75,18 @@ public class Instances {
     }
 
     public static WithdrawRequest dummyWithdrawRequest() {
-        return WithdrawRequest.withdrawRequestBuilder()
+        return withdrawRequest()
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(50))
-//                .type(WITHDRAW)
                 .build();
+    }
+
+    public static WithdrawRequest.WithdrawRequestBuilder dummyWithdrawRequestBuilder() {
+        return withdrawRequest()
+                .userId(randomUserId())
+                .accountId(randomAccountId())
+                .amount(eur(50));
     }
 
     public static Transaction.TransactionBuilder dummyWithdraw() {
@@ -85,12 +101,18 @@ public class Instances {
     }
 
     public static DepositRequest dummyDepositRequest() {
-        return DepositRequest.depositRequestBuilder()
+        return depositRequest()
                 .userId(randomUserId())
                 .accountId(randomAccountId())
                 .amount(eur(50))
-//                .type(DEPOSIT)
                 .build();
+    }
+
+    public static DepositRequest.DepositRequestBuilder dummyDepositRequestBuilder() {
+        return depositRequest()
+                .userId(randomUserId())
+                .accountId(randomAccountId())
+                .amount(eur(50));
     }
 
     public static Transaction.TransactionBuilder dummyDeposit() {
