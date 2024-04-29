@@ -9,6 +9,7 @@ import mpadillamarcos.javaspringbank.domain.exception.NotFoundException;
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,7 @@ public class AccountService {
     private final AccountRepository repository;
     private final Clock clock;
 
+    @Transactional
     public AccountView openAccount(UserId userId) {
         var account = newAccount()
                 .userId(userId)
@@ -69,18 +71,21 @@ public class AccountService {
                 .orElseThrow(this::accountNotFound);
     }
 
+    @Transactional
     public void blockAccount(AccountId accountId) {
         var account = getById(accountId);
 
         repository.update(account.block());
     }
 
+    @Transactional
     public void unblockAccount(AccountId accountId) {
         var account = getById(accountId);
 
         repository.update(account.unblock());
     }
 
+    @Transactional
     public void closeAccount(AccountId accountId) {
         var account = getById(accountId);
 
