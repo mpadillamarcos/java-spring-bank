@@ -8,6 +8,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static mpadillamarcos.javaspringbank.domain.Instances.dummyTransfer;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
 import static mpadillamarcos.javaspringbank.domain.transaction.DepositRequest.depositRequest;
@@ -15,10 +18,12 @@ import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.ran
 import static mpadillamarcos.javaspringbank.domain.transaction.TransferRequest.transferRequest;
 import static mpadillamarcos.javaspringbank.domain.transaction.WithdrawRequest.withdrawRequest;
 import static mpadillamarcos.javaspringbank.domain.user.UserId.randomUserId;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = TransactionController.class)
@@ -30,7 +35,7 @@ class TransactionControllerTest {
     private TransactionService transactionService;
 
     @Nested
-    class CreateTransfer {
+    class Transfer {
 
         @Test
         void returns_bad_request_when_user_id_is_not_uuid() throws Exception {
@@ -264,6 +269,44 @@ class TransactionControllerTest {
 
             verify(transactionService, times(1))
                     .confirm(transactionId);
+        }
+    }
+
+    @Nested
+    class ListTransactions {
+
+        @Test
+        void returns_bad_request_when_account_id_is_not_uuid() throws Exception {
+            mockMvc.perform(get("/accounts/5/transactions"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        void returns_transaction_list_when_all_parameters_are_valid() throws Exception {
+            var transaction = dummyTransfer()
+                    .amount(eur(100))
+                    .build();
+            var accountId = transaction.getAccountId();
+
+            mockMvc.perform(get(
+                            "/accounts/{accountId}/transactions", accountId.value()))
+                    .andExpect(status().isOk());
+
+            when(transactionService.listTransactionsByAccountId(accountId))
+                    .thenReturn(List.of(transaction));
+
+            mockMvc.perform(get("/accounts/{accountId}/transactions", accountId.value()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id", equalTo(transaction.getId().value().toString())))
+                    .andExpect(jsonPath("$[0].userId", equalTo(transaction.getUserId().value().toString())))
+                    .andExpect(jsonPath("$[0].accountId", equalTo(accountId.value().toString())))
+                    .andExpect(jsonPath("$[0].amount.amount", equalTo(100.0D)))
+                    .andExpect(jsonPath("$[0].amount.currency", equalTo("EUR")))
+                    .andExpect(jsonPath("$[0].createdDate", equalTo(transaction.getCreatedDate().toString())))
+                    .andExpect(jsonPath("$[0].state", equalTo(transaction.getState().toString())))
+                    .andExpect(jsonPath("$[0].direction", equalTo(transaction.getDirection().toString())))
+                    .andExpect(jsonPath("$[0].type", equalTo(transaction.getType().toString())))
+                    .andExpect(jsonPath("$[0].concept", equalTo(transaction.getConcept())));
         }
     }
 }

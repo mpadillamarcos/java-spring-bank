@@ -2,12 +2,11 @@ package mpadillamarcos.javaspringbank.web.transaction;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import mpadillamarcos.javaspringbank.domain.transaction.Transaction;
 import mpadillamarcos.javaspringbank.domain.transaction.TransactionService;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.accountId;
@@ -67,4 +66,27 @@ public class TransactionController {
     public void confirm(@PathVariable UUID transactionId) {
         service.confirm(transactionId(transactionId));
     }
+
+    @GetMapping("/accounts/{accountId}/transactions")
+    public List<TransactionDto> listTransactions(@PathVariable UUID accountId) {
+        return service.listTransactionsByAccountId(accountId(accountId))
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    private TransactionDto toDto(Transaction transaction) {
+        return TransactionDto.builder()
+                .id(transaction.getId().value())
+                .userId(transaction.getUserId().value())
+                .accountId(transaction.getAccountId().value())
+                .amount(transaction.getAmount())
+                .createdDate(transaction.getCreatedDate())
+                .state(transaction.getState())
+                .direction(transaction.getDirection())
+                .type(transaction.getType())
+                .concept(transaction.getConcept())
+                .build();
+    }
+
 }
