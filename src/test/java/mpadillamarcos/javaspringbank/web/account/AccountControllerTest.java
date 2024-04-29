@@ -2,6 +2,7 @@ package mpadillamarcos.javaspringbank.web.account;
 
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
 import mpadillamarcos.javaspringbank.domain.account.AccountView;
+import mpadillamarcos.javaspringbank.domain.money.Money;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +46,7 @@ class AccountControllerTest {
         void returns_opened_account() throws Exception {
             var account = dummyAccount().build();
             var access = dummyAccountAccess().userId(account.getUserId()).build();
-            var balance = dummyBalance().accountId(account.getId()).build();
+            var balance = dummyBalance().amount(Money.eur(33)).accountId(account.getId()).build();
             var userId = account.getUserId().value();
             var accountId = account.getId().value();
 
@@ -57,6 +58,8 @@ class AccountControllerTest {
                     .andExpect(jsonPath("$.id", equalTo(accountId.toString())))
                     .andExpect(jsonPath("$.userId", equalTo(userId.toString())))
                     .andExpect(jsonPath("$.createdDate", equalTo(account.getCreatedDate().toString())))
+                    .andExpect(jsonPath("$.balance.amount", equalTo(33D)))
+                    .andExpect(jsonPath("$.balance.currency", equalTo("EUR")))
                     .andExpect(jsonPath("$.state", equalTo("OPEN")))
                     .andExpect(jsonPath("$.accessType", equalTo("OWNER")));
         }
@@ -77,7 +80,7 @@ class AccountControllerTest {
             var userId = account.getUserId().value();
             var accountId = account.getId();
             var access = dummyAccountAccess().accountId(accountId).userId(account.getUserId()).type(OWNER).build();
-            var balance = dummyBalance().accountId(accountId).build();
+            var balance = dummyBalance().amount(Money.eur(200)).accountId(accountId).build();
             var accountView = new AccountView(account, access, balance);
 
             when(accountService.listUserAccounts(userId(userId)))
@@ -88,6 +91,8 @@ class AccountControllerTest {
                     .andExpect(jsonPath("$[0].id", equalTo(accountId.value().toString())))
                     .andExpect(jsonPath("$[0].userId", equalTo(userId.toString())))
                     .andExpect(jsonPath("$[0].createdDate", equalTo(account.getCreatedDate().toString())))
+                    .andExpect(jsonPath("$[0].balance.amount", equalTo(200D)))
+                    .andExpect(jsonPath("$[0].balance.currency", equalTo("EUR")))
                     .andExpect(jsonPath("$[0].state", equalTo("OPEN")))
                     .andExpect(jsonPath("$[0].accessType", equalTo("OWNER")));
         }
@@ -114,7 +119,7 @@ class AccountControllerTest {
             var userId = account.getUserId();
             var accountId = account.getId();
             var access = dummyAccountAccess().accountId(accountId).userId(userId).build();
-            var balance = dummyBalance().accountId(accountId).build();
+            var balance = dummyBalance().amount(Money.eur(150)).accountId(accountId).build();
             var accountView = new AccountView(account, access, balance);
 
             when(accountService.findAccountView(account.getUserId(), account.getId()))
@@ -125,6 +130,8 @@ class AccountControllerTest {
                     .andExpect(jsonPath("$.id", equalTo(accountId.value().toString())))
                     .andExpect(jsonPath("$.userId", equalTo(userId.value().toString())))
                     .andExpect(jsonPath("$.createdDate", equalTo(account.getCreatedDate().toString())))
+                    .andExpect(jsonPath("$.balance.amount", equalTo(150D)))
+                    .andExpect(jsonPath("$.balance.currency", equalTo("EUR")))
                     .andExpect(jsonPath("$.accessType", equalTo("OWNER")))
                     .andExpect(jsonPath("$.state", equalTo("OPEN")));
         }
