@@ -53,5 +53,6 @@
         SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
         FROM transactions
         WHERE account_id = #{accountId}
+        ORDER BY created_date DESC
     </select>
 </mapper>

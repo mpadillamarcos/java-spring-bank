@@ -5,11 +5,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static java.time.temporal.ChronoUnit.DAYS;
 import static mpadillamarcos.javaspringbank.domain.Instances.*;
 import static mpadillamarcos.javaspringbank.domain.account.AccountId.randomAccountId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionDirection.INCOMING;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionGroupId.randomTransactionGroupId;
 import static mpadillamarcos.javaspringbank.domain.transaction.TransactionId.randomTransactionId;
+import static mpadillamarcos.javaspringbank.infra.TestClock.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = {TransactionMapper.class})
@@ -75,5 +77,20 @@ public class TransactionMapperTest extends MapperTestBase {
         var storedTransactions = mapper.findTransactionsByAccountId(accountId);
 
         assertThat(storedTransactions).containsExactly(transaction1, transaction3);
+    }
+
+    @Test
+    void returns_a_list_of_ordered_transactions_given_an_account_id() {
+        var accountId = randomAccountId();
+        var transaction1 = dummyTransfer().accountId(accountId).createdDate(NOW).build();
+        var transaction2 = dummyTransfer().direction(INCOMING).build();
+        var transaction3 = dummyWithdraw().accountId(accountId).createdDate(NOW.plus(1, DAYS)).build();
+        mapper.insert(transaction1);
+        mapper.insert(transaction2);
+        mapper.insert(transaction3);
+
+        var storedTransactions = mapper.findTransactionsByAccountId(accountId);
+
+        assertThat(storedTransactions).containsExactly(transaction3, transaction1);
     }
 }
