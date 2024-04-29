@@ -13,6 +13,7 @@ import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static mpadillamarcos.javaspringbank.domain.account.AccountState.OPEN;
 import static mpadillamarcos.javaspringbank.domain.transaction.Transaction.newTransaction;
@@ -39,7 +40,7 @@ public class TransactionService {
         var groupId = randomTransactionGroupId();
 
         canOperate(originAccountId, userId);
-        checkAccountIsOpen(destinationAccountId);
+        checkAccountIsOpen(destinationAccountId, TransactionNotAllowedException::new);
         balanceService.withdraw(originAccountId, amount);
 
         var outgoingTransaction = newTransaction()
@@ -86,6 +87,7 @@ public class TransactionService {
                 .build();
 
         repository.insert(withdrawTransaction);
+        confirm(withdrawTransaction);
     }
 
     public void deposit(DepositRequest depositRequest) {
@@ -106,6 +108,7 @@ public class TransactionService {
                 .build();
 
         repository.insert(depositTransaction);
+        confirm(depositTransaction);
     }
 
     public List<Transaction> listTransactionsByAccountId(AccountId accountId) {
@@ -119,7 +122,7 @@ public class TransactionService {
     }
 
     private void confirm(Transaction transaction) {
-        isAccountOpen(transaction);
+        canUpdateTransaction(transaction);
         repository.update(transaction.confirm());
         if (transaction.is(INCOMING)) {
             balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
@@ -136,7 +139,7 @@ public class TransactionService {
     }
 
     private void reject(Transaction transaction) {
-        isAccountOpen(transaction);
+        canUpdateTransaction(transaction);
         repository.update(transaction.reject());
         if (transaction.is(OUTGOING) && transaction.is(TRANSFER)) {
             balanceService.deposit(transaction.getAccountId(), transaction.getAmount());
@@ -144,7 +147,7 @@ public class TransactionService {
     }
 
     private void canOperate(AccountId accountId, UserId userId) {
-        checkAccountIsOpen(accountId);
+        canPlaceTransactionOnAccount(accountId);
         var access = accessService.findAccountAccess(accountId, userId)
                 .orElseThrow(() -> new AccessDeniedException("User with ID " + userId.value() + " has no access to that account"));
 
@@ -153,17 +156,18 @@ public class TransactionService {
         }
     }
 
-    private void checkAccountIsOpen(AccountId accountId) {
-        var account = accountService.getById(accountId);
-        if (!account.is(OPEN)) {
-            throw new TransactionNotAllowedException("The account with ID " + accountId.value() + " is " + account.getState());
-        }
+    private void canPlaceTransactionOnAccount(AccountId accountId) {
+        checkAccountIsOpen(accountId, TransactionNotAllowedException::new);
     }
 
-    private void isAccountOpen(Transaction transaction) {
-        var account = accountService.getById(transaction.getAccountId());
+    private void canUpdateTransaction(Transaction transaction) {
+        checkAccountIsOpen(transaction.getAccountId(), IllegalStateException::new);
+    }
+
+    private <T extends RuntimeException> void checkAccountIsOpen(AccountId accountId, Function<String, T> error) {
+        var account = accountService.getById(accountId);
         if (!account.is(OPEN)) {
-            throw new IllegalStateException("The account with ID " + account.getId().value() + " is not open");
+            throw error.apply("The account with ID " + accountId.value() + " is " + account.getState());
         }
     }
 

@@ -353,10 +353,33 @@ class TransactionServiceTest {
                     .returns(userId, Transaction::getUserId)
                     .returns(newTransaction.getAmount(), Transaction::getAmount)
                     .returns(NOW, Transaction::getCreatedDate)
-                    .returns(newTransaction.getState(), Transaction::getState)
+                    .returns(CONFIRMED, Transaction::getState)
                     .returns(newTransaction.getType(), Transaction::getType)
                     .returns(newTransaction.getDirection(), Transaction::getDirection)
                     .returns(newTransaction.getConcept(), Transaction::getConcept);
+        }
+
+        @Test
+        void updates_balance() {
+            var request = dummyWithdrawRequest();
+            var userId = request.getUserId();
+            var accountId = request.getAccountId();
+            var account = dummyAccount().userId(userId).id(accountId).build();
+            var access = access(request);
+            var newTransaction = dummyWithdraw()
+                    .accountId(accountId)
+                    .userId(userId)
+                    .build();
+
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+
+            service.withdraw(request);
+
+            verify(balanceService, times(1))
+                    .withdraw(accountId, newTransaction.getAmount());
         }
     }
 
@@ -459,10 +482,33 @@ class TransactionServiceTest {
                     .returns(userId, Transaction::getUserId)
                     .returns(newTransaction.getAmount(), Transaction::getAmount)
                     .returns(NOW, Transaction::getCreatedDate)
-                    .returns(newTransaction.getState(), Transaction::getState)
+                    .returns(CONFIRMED, Transaction::getState)
                     .returns(DEPOSIT, Transaction::getType)
                     .returns(INCOMING, Transaction::getDirection)
                     .returns(newTransaction.getConcept(), Transaction::getConcept);
+        }
+
+        @Test
+        void updates_balance() {
+            var request = dummyDepositRequest();
+            var userId = request.getUserId();
+            var accountId = request.getAccountId();
+            var account = dummyAccount().userId(userId).id(accountId).build();
+            var access = access(request);
+            var newTransaction = dummyDeposit()
+                    .accountId(accountId)
+                    .userId(userId)
+                    .build();
+
+            when(accountService.getById(accountId))
+                    .thenReturn(account);
+            when(accessService.findAccountAccess(accountId, userId))
+                    .thenReturn(Optional.of(access));
+
+            service.deposit(request);
+
+            verify(balanceService, times(1))
+                    .deposit(accountId, newTransaction.getAmount());
         }
     }
 
