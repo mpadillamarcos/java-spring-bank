@@ -11,6 +11,7 @@ import mpadillamarcos.javaspringbank.domain.exception.TransactionNotAllowedExcep
 import mpadillamarcos.javaspringbank.domain.time.Clock;
 import mpadillamarcos.javaspringbank.domain.user.UserId;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.function.Function;
@@ -32,6 +33,7 @@ public class TransactionService {
     private final BalanceService balanceService;
     private final Clock clock;
 
+    @Transactional
     public void transfer(TransferRequest transferRequest) {
         var userId = transferRequest.getUserId();
         var originAccountId = transferRequest.getOriginAccountId();
@@ -69,6 +71,7 @@ public class TransactionService {
         repository.insert(incomingTransaction);
     }
 
+    @Transactional
     public void withdraw(WithdrawRequest withdrawRequest) {
         var userId = withdrawRequest.getUserId();
         var accountId = withdrawRequest.getAccountId();
@@ -90,6 +93,7 @@ public class TransactionService {
         confirm(withdrawTransaction);
     }
 
+    @Transactional
     public void deposit(DepositRequest depositRequest) {
         var userId = depositRequest.getUserId();
         var accountId = depositRequest.getAccountId();
