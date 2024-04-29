@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 
 import static mpadillamarcos.javaspringbank.domain.money.Currency.EUR;
-import static mpadillamarcos.javaspringbank.domain.money.Currency.YEN;
+import static mpadillamarcos.javaspringbank.domain.money.Currency.JPY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -59,7 +59,7 @@ class MoneyTest {
         @Test
         void throws_exception_when_subtracting_different_currencies() {
             Money amount = Money.eur(50);
-            Money withdrawal = Money.builder().currency(YEN).amount(BigDecimal.valueOf(1000)).build();
+            Money withdrawal = Money.builder().currency(JPY).amount(BigDecimal.valueOf(1000)).build();
 
             assertThrows(IllegalArgumentException.class, () -> amount.subtract(withdrawal));
         }
@@ -79,7 +79,7 @@ class MoneyTest {
         @Test
         void throws_exception_when_adding_different_currencies() {
             Money amount = Money.eur(50);
-            Money deposit = Money.builder().currency(YEN).amount(BigDecimal.valueOf(1000)).build();
+            Money deposit = Money.builder().currency(JPY).amount(BigDecimal.valueOf(1000)).build();
 
             assertThrows(IllegalArgumentException.class, () -> amount.add(deposit));
         }
@@ -121,7 +121,7 @@ class MoneyTest {
 
     @Test
     void returns_a_string_with_the_amount_with_no_decimals_and_the_currency_symbol() {
-        var money = Money.builder().amount(BigDecimal.valueOf(100000.00)).currency(YEN).build();
+        var money = Money.builder().amount(BigDecimal.valueOf(100000.00)).currency(JPY).build();
 
         assertThat(money.toString()).isEqualTo("¥100000");
     }

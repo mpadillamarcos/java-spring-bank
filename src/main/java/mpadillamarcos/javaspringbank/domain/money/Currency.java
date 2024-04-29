@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Currency {
 
-    EUR("€"), YEN("¥");
+    EUR("€"), JPY("¥");
 
     private final String symbol;
 

@@ -40,7 +40,7 @@ public class TransactionService {
         var groupId = randomTransactionGroupId();
 
         canOperate(originAccountId, userId);
-        checkAccountIsOpen(destinationAccountId, TransactionNotAllowedException::new);
+        canPlaceTransactionOnAccount(destinationAccountId);
         balanceService.withdraw(originAccountId, amount);
 
         var outgoingTransaction = newTransaction()
