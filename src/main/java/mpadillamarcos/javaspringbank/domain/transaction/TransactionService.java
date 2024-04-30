@@ -119,6 +119,7 @@ public class TransactionService {
         return repository.findTransactionsByAccountId(accountId);
     }
 
+    @Transactional
     public void confirm(TransactionId transactionId) {
         var transaction = getTransactionById(transactionId);
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
@@ -136,6 +137,7 @@ public class TransactionService {
         }
     }
 
+    @Transactional
     public void reject(TransactionId transactionId) {
         var transaction = getTransactionById(transactionId);
         List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
