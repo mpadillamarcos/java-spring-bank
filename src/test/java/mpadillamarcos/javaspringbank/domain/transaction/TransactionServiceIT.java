@@ -187,19 +187,17 @@ public class TransactionServiceIT extends MapperTestBase {
         void confirms_transaction_concurrently() {
             var originAccount = setupAccount(eur(2000));
             var destinationAccount = setupAccount(eur(0));
-            var originAccountId = originAccount.getAccountId();
-            var destinationAccountId = destinationAccount.getAccountId();
 
             var transactionId = transactionService.transfer(transferRequest()
-                    .destinationAccountId(destinationAccountId)
-                    .originAccountId(originAccountId)
+                    .destinationAccountId(destinationAccount.getAccountId())
+                    .originAccountId(originAccount.getAccountId())
                     .userId(originAccount.getUserId())
                     .amount(eur(10))
                     .build());
 
             var task = new ConfirmTask(transactionId);
 
-            runTimes(task, 20);
+            runTimes(20, task);
 
             assertThatBalanceIs(destinationAccount, eur(10));
         }
@@ -208,19 +206,17 @@ public class TransactionServiceIT extends MapperTestBase {
         void rejects_transaction_concurrently() {
             var originAccount = setupAccount(eur(2000));
             var destinationAccount = setupAccount(eur(100));
-            var originAccountId = originAccount.getAccountId();
-            var destinationAccountId = destinationAccount.getAccountId();
 
             var transactionId = transactionService.transfer(transferRequest()
-                    .destinationAccountId(destinationAccountId)
-                    .originAccountId(originAccountId)
+                    .destinationAccountId(destinationAccount.getAccountId())
+                    .originAccountId(originAccount.getAccountId())
                     .userId(originAccount.getUserId())
                     .amount(eur(10))
                     .build());
 
             var task = new RejectTask(transactionId);
 
-            runTimes(task, 20);
+            runTimes(20, task);
 
             assertThatBalanceIs(originAccount, eur(2000));
         }
@@ -257,15 +253,6 @@ public class TransactionServiceIT extends MapperTestBase {
                         .map(executor::submit)
                         .toList();
 
-                await(futures);
-            }
-        }
-
-        private void runTimes(Runnable task, int times) {
-            try (var executor = Executors.newFixedThreadPool(20)) {
-                var futures = range(0, times)
-                        .mapToObj(i -> executor.submit(task))
-                        .toList();
                 await(futures);
             }
         }
