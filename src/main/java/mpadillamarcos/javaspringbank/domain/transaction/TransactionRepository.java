@@ -16,4 +16,6 @@ public interface TransactionRepository {
     List<Transaction> findTransactionsByGroupId(TransactionGroupId groupId);
 
     List<Transaction> findTransactionsByAccountId(AccountId accountId);
+
+    List<Transaction> findTransactionsByGroupIdForUpdate(TransactionGroupId groupId);
 }

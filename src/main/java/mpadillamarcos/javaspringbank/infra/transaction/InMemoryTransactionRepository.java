@@ -63,6 +63,11 @@ public class InMemoryTransactionRepository implements TransactionRepository {
         return transactionsList;
     }
 
+    @Override
+    public List<Transaction> findTransactionsByGroupIdForUpdate(TransactionGroupId groupId) {
+        return findTransactionsByGroupId(groupId);
+    }
+
     public Optional<Transaction> findTransactionById(TransactionId transactionId) {
         return Optional.ofNullable(transactions.get(transactionId));
     }

@@ -49,6 +49,13 @@
         WHERE group_id = #{groupId}
     </select>
 
+    <select id="findTransactionsByGroupIdForUpdate" resultMap="transaction">
+        SELECT *
+        FROM transactions
+        WHERE group_id = #{groupId}
+        FOR UPDATE
+    </select>
+
     <select id="findTransactionsByAccountId" resultMap="transaction">
         SELECT *
         FROM transactions

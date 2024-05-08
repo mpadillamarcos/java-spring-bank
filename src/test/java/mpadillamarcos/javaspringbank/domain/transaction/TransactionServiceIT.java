@@ -183,6 +183,27 @@ public class TransactionServiceIT extends MapperTestBase {
             assertThatBalanceIs(account2, eur(2_000));
         }
 
+        @Test
+        void confirms_transaction_concurrently() {
+            var originAccount = setupAccount(eur(2000));
+            var destinationAccount = setupAccount(eur(0));
+            var originAccountId = originAccount.getAccountId();
+            var destinationAccountId = destinationAccount.getAccountId();
+
+            var transactionId = transactionService.transfer(transferRequest()
+                    .destinationAccountId(destinationAccountId)
+                    .originAccountId(originAccountId)
+                    .userId(originAccount.getUserId())
+                    .amount(eur(10))
+                    .build());
+
+            var task = new ConfirmTask(transactionId);
+
+            runTimes(task, 20);
+
+            assertThatBalanceIs(destinationAccount, eur(10));
+        }
+
         private void assertThatBalanceIs(AccountView account, Money expected) {
             var balance = balanceService.getBalance(account.getAccountId()).getAmount();
 
@@ -219,6 +240,15 @@ public class TransactionServiceIT extends MapperTestBase {
             }
         }
 
+        private void runTimes(Runnable task, int times) {
+            try (var executor = Executors.newFixedThreadPool(20)) {
+                var futures = range(0, times)
+                        .mapToObj(i -> executor.submit(task))
+                        .toList();
+                await(futures);
+            }
+        }
+
         @SneakyThrows
         private void await(List<? extends Future<?>> futures) {
             while (!futures.stream().allMatch(Future::isDone)) {
@@ -251,6 +281,20 @@ public class TransactionServiceIT extends MapperTestBase {
                         .build());
 
                 transactionService.confirm(transactionId);
+            }
+        }
+
+        private class ConfirmTask implements Runnable {
+
+            private final TransactionId id;
+
+            private ConfirmTask(TransactionId id) {
+                this.id = id;
+            }
+
+            @Override
+            public void run() {
+                transactionService.confirm(id);
             }
         }
     }
