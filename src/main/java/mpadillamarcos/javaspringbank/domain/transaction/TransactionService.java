@@ -142,7 +142,7 @@ public class TransactionService {
     @Transactional
     public void reject(TransactionId transactionId) {
         var transaction = getTransactionById(transactionId);
-        List<Transaction> transactions = repository.findTransactionsByGroupId(transaction.getGroupId());
+        List<Transaction> transactions = repository.findTransactionsByGroupIdForUpdate(transaction.getGroupId());
         transactions.forEach(this::reject);
     }
 

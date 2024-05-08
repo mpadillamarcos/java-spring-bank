@@ -204,6 +204,27 @@ public class TransactionServiceIT extends MapperTestBase {
             assertThatBalanceIs(destinationAccount, eur(10));
         }
 
+        @Test
+        void rejects_transaction_concurrently() {
+            var originAccount = setupAccount(eur(2000));
+            var destinationAccount = setupAccount(eur(100));
+            var originAccountId = originAccount.getAccountId();
+            var destinationAccountId = destinationAccount.getAccountId();
+
+            var transactionId = transactionService.transfer(transferRequest()
+                    .destinationAccountId(destinationAccountId)
+                    .originAccountId(originAccountId)
+                    .userId(originAccount.getUserId())
+                    .amount(eur(10))
+                    .build());
+
+            var task = new RejectTask(transactionId);
+
+            runTimes(task, 20);
+
+            assertThatBalanceIs(originAccount, eur(2000));
+        }
+
         private void assertThatBalanceIs(AccountView account, Money expected) {
             var balance = balanceService.getBalance(account.getAccountId()).getAmount();
 
@@ -295,6 +316,20 @@ public class TransactionServiceIT extends MapperTestBase {
             @Override
             public void run() {
                 transactionService.confirm(id);
+            }
+        }
+
+        private class RejectTask implements Runnable {
+
+            private final TransactionId id;
+
+            public RejectTask(TransactionId id) {
+                this.id = id;
+            }
+
+            @Override
+            public void run() {
+                transactionService.reject(id);
             }
         }
     }
