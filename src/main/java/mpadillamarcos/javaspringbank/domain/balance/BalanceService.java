@@ -33,15 +33,20 @@ public class BalanceService {
     }
 
     public void withdraw(AccountId accountId, Money amount) {
-        var currentBalance = getBalance(accountId);
+        var currentBalance = getBalanceForUpdate(accountId);
         var updatedBalance = currentBalance.withdraw(amount);
         repository.update(updatedBalance);
     }
 
     public void deposit(AccountId accountId, Money amount) {
-        var currentBalance = getBalance(accountId);
+        var currentBalance = getBalanceForUpdate(accountId);
         var updatedBalance = currentBalance.deposit(amount);
         repository.update(updatedBalance);
+    }
+
+    private Balance getBalanceForUpdate(AccountId accountId) {
+        return repository.findBalanceForUpdate(accountId)
+                .orElseThrow(() -> new NotFoundException("balance not found"));
     }
 
 }

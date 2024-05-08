@@ -44,13 +44,13 @@
     </update>
 
     <select id="findTransactionsByGroupId" resultMap="transaction">
-        SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
+        SELECT *
         FROM transactions
         WHERE group_id = #{groupId}
     </select>
 
     <select id="findTransactionsByAccountId" resultMap="transaction">
-        SELECT id, group_id, user_id, account_id, amount, currency, created_date, state, direction, type, concept
+        SELECT *
         FROM transactions
         WHERE account_id = #{accountId}
         ORDER BY created_date DESC

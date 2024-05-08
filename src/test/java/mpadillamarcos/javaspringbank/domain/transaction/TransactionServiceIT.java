@@ -1,9 +1,12 @@
 package mpadillamarcos.javaspringbank.domain.transaction;
 
+import lombok.SneakyThrows;
 import mpadillamarcos.javaspringbank.domain.access.AccountAccessService;
 import mpadillamarcos.javaspringbank.domain.account.AccountService;
+import mpadillamarcos.javaspringbank.domain.account.AccountView;
 import mpadillamarcos.javaspringbank.domain.balance.BalanceService;
 import mpadillamarcos.javaspringbank.domain.exception.InsufficientBalanceException;
+import mpadillamarcos.javaspringbank.domain.money.Money;
 import mpadillamarcos.javaspringbank.infra.MapperTestBase;
 import mpadillamarcos.javaspringbank.infra.TestClock;
 import org.junit.jupiter.api.Nested;
@@ -12,6 +15,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static java.lang.Thread.sleep;
+import static java.util.stream.IntStream.range;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyTransfer;
 import static mpadillamarcos.javaspringbank.domain.Instances.dummyWithdraw;
 import static mpadillamarcos.javaspringbank.domain.money.Money.eur;
@@ -151,6 +163,95 @@ public class TransactionServiceIT extends MapperTestBase {
 
             assertThat(transactionRepository.findTransactionById(transaction.getId())).get()
                     .returns(PENDING, Transaction::getState);
+        }
+    }
+
+    @Nested
+    class Concurrency {
+
+        @Test
+        void updates_balances_concurrently() {
+            var account1 = setupAccount(eur(2_000));
+            var account2 = setupAccount(eur(2_000));
+
+            var task1 = new TransferTask(account2, account1, eur(100));
+            var task2 = new TransferTask(account1, account2, eur(100));
+
+            runTimes(20, task1, task2);
+
+            assertThatBalanceIs(account1, eur(2_000));
+            assertThatBalanceIs(account2, eur(2_000));
+        }
+
+        private void assertThatBalanceIs(AccountView account, Money expected) {
+            var balance = balanceService.getBalance(account.getAccountId()).getAmount();
+
+            assertThat(balance).isEqualTo(expected);
+        }
+
+        private AccountView setupAccount(Money initialBalance) {
+            var user = randomUserId();
+            var account = accountService.openAccount(user);
+
+            transactionService.deposit(
+                    depositRequest()
+                            .accountId(account.getAccountId())
+                            .amount(initialBalance)
+                            .userId(user)
+                            .build()
+            );
+            return account;
+        }
+
+        private void runTimes(int times, Runnable... tasks) {
+            try (var executor = Executors.newFixedThreadPool(20)) {
+                var repeatedTasks = range(0, times)
+                        .mapToObj(i -> tasks)
+                        .flatMap(Arrays::stream)
+                        .collect(Collectors.toList());
+                Collections.shuffle(repeatedTasks);
+
+                var futures = repeatedTasks.stream()
+                        .map(executor::submit)
+                        .toList();
+
+                await(futures);
+            }
+        }
+
+        @SneakyThrows
+        private void await(List<? extends Future<?>> futures) {
+            while (!futures.stream().allMatch(Future::isDone)) {
+                sleep(200);
+            }
+        }
+
+        private class TransferTask implements Runnable {
+
+            private final AccountView destinationAccount;
+            private final AccountView originAccount;
+            private final Money amount;
+
+            private TransferTask(AccountView destinationAccount, AccountView originAccount, Money amount) {
+                this.destinationAccount = destinationAccount;
+                this.originAccount = originAccount;
+                this.amount = amount;
+            }
+
+            @Override
+            public void run() {
+                var originAccountId = originAccount.getAccountId();
+                var destinationAccountId = destinationAccount.getAccountId();
+
+                var transactionId = transactionService.transfer(transferRequest()
+                        .destinationAccountId(destinationAccountId)
+                        .originAccountId(originAccountId)
+                        .userId(originAccount.getUserId())
+                        .amount(amount)
+                        .build());
+
+                transactionService.confirm(transactionId);
+            }
         }
     }
 }

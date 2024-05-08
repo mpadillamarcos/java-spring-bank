@@ -570,6 +570,7 @@ class TransactionServiceTest {
                     .thenReturn(account);
 
             assertThrows(IllegalStateException.class, () -> service.confirm(transaction.getId()));
+            verifyNoInteractions(balanceService);
         }
 
         @Test

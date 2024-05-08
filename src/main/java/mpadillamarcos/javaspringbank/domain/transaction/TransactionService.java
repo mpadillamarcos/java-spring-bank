@@ -34,7 +34,7 @@ public class TransactionService {
     private final Clock clock;
 
     @Transactional
-    public void transfer(TransferRequest transferRequest) {
+    public TransactionId transfer(TransferRequest transferRequest) {
         var userId = transferRequest.getUserId();
         var originAccountId = transferRequest.getOriginAccountId();
         var destinationAccountId = transferRequest.getDestinationAccountId();
@@ -69,6 +69,8 @@ public class TransactionService {
 
         repository.insert(outgoingTransaction);
         repository.insert(incomingTransaction);
+
+        return outgoingTransaction.getId();
     }
 
     @Transactional
