@@ -11,12 +11,12 @@ gain proficiency in both Java and Spring Boot.
 To manage the project's build I've used **Maven**.
 
 * Set your docker engine running.
-* To run the tests, run: `.\mvnw.cmd test`
-* To create the jar file, run: `.\mvnw.cmd package`
+* To run the tests, run: `mvnw test`
+* To create the jar file, run: `mvnw package`
 
 ## Business
 
-The app structure revolves around 4 main classes: account, access, transactions and balance.
+The app structure revolves around 4 main models: account, access, transactions and balance.
 One account has only one balance but may have many transactions (transfer, deposit or withdraw)
 and also different users can have different types of access to that account.
 
@@ -31,7 +31,7 @@ have operator access.
 
 The bank app is built using Java and Spring Boot framework.
 
-**Libraries**:
+**Additional libraries**:
 
 - **Lombok**: to reduce boilerplate code by using annotations.
 - **MyBatis**: to interact with PostgreSQL using an XML descriptor to map Java objects to database tables with minimal
@@ -39,15 +39,19 @@ The bank app is built using Java and Spring Boot framework.
 - **JUnit**: to write and run tests.
 - **Mockito**: to create mock objects in unit tests to isolate the behavior of the class being tested from its
   dependencies.
-- **Testcontainers**: to create disposable containers (Docker containers) for the integration tests.
+- **Testcontainers**: to create disposable containers (Docker containers) to conduct the integration tests.
+- **AssertJ**: to make the tests more readable by writing assertions that resemble natural language.
 - **Flyway**: to manage the evolution of database schemas through series of versioned SQL migration scripts.
 
 ## Testing approach
+The application has been constructed following a test-driven development (TDD) approach to ensure the code's functionality
+throughout the project's lifecycle. To avoid using mocks or the H2 in-memory database to conduct integration tests, I've
+used Testcontainers as it provides testing environments that resemble production.
 
 <details>
 <summary>Unit Tests</summary>
 
-To test individual classes and functionalities.
+To test individual classes and functionalities. [Example's context](src/test/java/mpadillamarcos/javaspringbank/domain/account/AccountTest.java).
 
 ```java
 
@@ -66,8 +70,12 @@ void sets_state_to_blocked_when_blocking_an_open_account() {
 <details>
 <summary>Integration Tests</summary>
 
-To test the interaction between classes and a volatile database.
+To test the interaction between the app and other components (database and API). 
 
+- **Database**
+
+Using [Testcontainers](src/test/java/mpadillamarcos/javaspringbank/infra/DbTestBase.java).
+[Example's context](src/test/java/mpadillamarcos/javaspringbank/infra/access/AccessMapperTest.java).
 ```java
 
 @Test
@@ -80,13 +88,26 @@ void returns_one_inserted_access() {
     assertThat(storedAccess).hasValue(access);
 }
 ```
+- **API**
 
+Using WebMVCTest. [Example's context](src/test/java/mpadillamarcos/javaspringbank/web/transaction/TransactionControllerTest.java).
+
+```java
+@Test
+void returns_bad_request_when_required_body_is_null() throws Exception {
+    mockMvc.perform(post("/users/f01f898b-82fc-4860-acc0-76b13dcd78c5/accounts/f01f898b-82fc-4860-acc0-76b13dcd78c5/transfer")
+                    .content("{}")
+                    .contentType(APPLICATION_JSON))
+            .andExpect(status().isBadRequest());
+}
+```
 </details>
 
 <details>
 <summary>Concurrency Tests</summary>
 
-To assure that there are no concurrency issues when sending multiple petitions at once.
+To assure that there are no concurrency issues when sending multiple petitions at once. 
+[Example's context](src/test/java/mpadillamarcos/javaspringbank/domain/transaction/TransactionServiceIT.java).
 
 ```java
 
@@ -110,8 +131,9 @@ void updates_balances_concurrently() {
 <details>
 <summary>End-to-End Tests</summary>
 
-To test the app functionality from creating an account to creating the different types of
-transactions.
+To test the app functionality from creating an account to creating the different types of transactions. It boots 
+the whole app and makes some requests as an external consumer.
+[Example's context](src/test/java/mpadillamarcos/javaspringbank/JavaSpringBankApplicationTests.java).
 
 ```java
 
@@ -137,10 +159,8 @@ void can_deposit_money() {
 
 ## Challenges
 
-One of the main challenges was dealing with concurrency because any concurrency issue would have serious consequences
-in the account balance when transferring money from one account to another. Testing was a challenge from the start as
-this
-is the first project I've worked with TDD. Furthermore, object-oriented programming was a whole other challenge,
-requiring
-careful design considerations to create a scalable and easily maintainable code.
-
+- :thread: **Concurrency**: any concurrency issue would have had serious consequences in the account balance when 
+transferring money from one account to another. 
+- :white_check_mark: **Testing**: it was a challenge from the start as this is the first project I've worked with TDD. 
+- :technologist: **Object-oriented programming**: requires careful design considerations to create a scalable 
+and easily maintainable code.
