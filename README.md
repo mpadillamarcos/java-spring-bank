@@ -54,7 +54,6 @@ used Testcontainers as it provides testing environments that resemble production
 To test individual classes and functionalities. [Example's context](src/test/java/mpadillamarcos/javaspringbank/domain/account/AccountTest.java).
 
 ```java
-
 @Test
 void sets_state_to_blocked_when_blocking_an_open_account() {
     var account = dummyAccount().build();
@@ -74,18 +73,15 @@ To test the interaction between the app and other components (database and API).
 
 - **Database**
 
-Using [Testcontainers](src/test/java/mpadillamarcos/javaspringbank/infra/DbTestBase.java).
-[Example's context](src/test/java/mpadillamarcos/javaspringbank/infra/access/AccessMapperTest.java).
+Using Testcontainers.
 ```java
+@Testcontainers
+public class DbTestBase {
 
-@Test
-void returns_one_inserted_access() {
-    var access = dummyAccountAccess().build();
-    mapper.insert(access);
-
-    var storedAccess = mapper.findAccountAccess(access.getAccountId(), access.getUserId());
-
-    assertThat(storedAccess).hasValue(access);
+  @Container
+  @ServiceConnection
+  @SuppressWarnings("unused")
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
 }
 ```
 - **API**
@@ -106,11 +102,10 @@ void returns_bad_request_when_required_body_is_null() throws Exception {
 <details>
 <summary>Concurrency Tests</summary>
 
-To assure that there are no concurrency issues when sending multiple petitions at once. 
+To assure that there are no concurrency issues when sending multiple requests at once. 
 [Example's context](src/test/java/mpadillamarcos/javaspringbank/domain/transaction/TransactionServiceIT.java).
 
 ```java
-
 @Test
 void updates_balances_concurrently() {
     var account1 = setupAccount(eur(2_000));
@@ -136,7 +131,6 @@ the whole app and makes some requests as an external consumer.
 [Example's context](src/test/java/mpadillamarcos/javaspringbank/JavaSpringBankApplicationTests.java).
 
 ```java
-
 @Test
 void can_deposit_money() {
     var userId = randomUUID();
@@ -159,8 +153,12 @@ void can_deposit_money() {
 
 ## Challenges
 
+- :atom: **Atomicity**: some transactions like opening an account or doing a money transfer, had to make atomic changes
+in the database, that is to say, the transaction should either all succeed or all fail as a single unit. This was achieved
+thanks to the `@Transactional` Spring annotation.
 - :thread: **Concurrency**: any concurrency issue would have had serious consequences in the account balance when 
-transferring money from one account to another. 
-- :white_check_mark: **Testing**: it was a challenge from the start as this is the first project I've worked with TDD. 
-- :technologist: **Object-oriented programming**: requires careful design considerations to create a scalable 
-and easily maintainable code.
+transferring money from one account to another. To avoid it, the rows in the database containing the balance and the 
+transfer transactions involved had to be locked using the `SELECT FOR UPDATE` command until the atomic changes were done. 
+- :white_check_mark: **Testing**: it was a challenge from the start as this is the first project I've worked on with TDD. I
+used online resources to understand best practices and gradually built confidence by starting with simple test cases and 
+progressing to more complicated ones.
